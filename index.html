@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>Sudan PR Tracker</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style id="css">/* Layout: control-room register — sticky command bar, KPI strip (clickable filters), three charts, tabbed workspace, slide-in PR editor */
+:root {
+  --bg: #eef0ec; --panel: #ffffff; --panel-2: #f7f8f5; --ink: #1b2220; --muted: #5b6561; --line: #d6dbd5; --track: #e4e8e2;
+  --accent: #1f5f73; --accent-ink: #ffffff; --ok: #2f7a4b; --warn: #a35f08; --bad: #b3261e; --neutral: #8a948f;
+  --bad-bg: #fbeceb; --warn-bg: #fbf1e3; --ok-bg: #e8f3ec; --acc-bg: #e5f0f3;
+  --shadow: 0 10px 30px rgba(20, 30, 28, .18);
+  --f-display: "IBM Plex Serif", Georgia, serif;
+  --f-body: "IBM Plex Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121715; --panel: #1a201e; --panel-2: #202724; --ink: #e5ebe8; --muted: #9aa5a0; --line: #2e3734; --track: #2a3230;
+  --accent: #6db3c9; --accent-ink: #0e1a1e; --ok: #6cc08c; --warn: #e3a24a; --bad: #f07a70; --neutral: #74807b;
+  --bad-bg: #3a1f1d; --warn-bg: #3a2c17; --ok-bg: #1b3325; --acc-bg: #18303a; --shadow: 0 10px 30px rgba(0,0,0,.5); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121715; --panel: #1a201e; --panel-2: #202724; --ink: #e5ebe8; --muted: #9aa5a0; --line: #2e3734; --track: #2a3230;
+  --accent: #6db3c9; --accent-ink: #0e1a1e; --ok: #6cc08c; --warn: #e3a24a; --bad: #f07a70; --neutral: #74807b;
+  --bad-bg: #3a1f1d; --warn-bg: #3a2c17; --ok-bg: #1b3325; --acc-bg: #18303a; --shadow: 0 10px 30px rgba(0,0,0,.5); color-scheme: dark; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 14px; line-height: 1.45; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--panel); }
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gut { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.inner { max-width: 1400px; margin-inline: auto; }
+
+/* command bar */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--panel); border-bottom: 1px solid var(--line); }
+.bar .inner { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 10px; }
+.brand { display: flex; flex-direction: column; min-width: 0; margin-right: auto; }
+.brand .eb { font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.brand h1 { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 22px; line-height: 1.15; }
+.sync { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--neutral); }
+.sync.live i { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-bg); }
+.sync.err i { background: var(--bad); }
+.me { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.me img { width: 22px; height: 22px; border-radius: 50%; }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.btn:hover { background: var(--panel-2); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--bad); }
+.btn[disabled] { opacity: .45; cursor: not-allowed; }
+.btn.sm { padding: 3px 9px; font-size: 12px; }
+
+main.inner { display: flex; flex-direction: column; gap: 18px; padding-block: 18px 60px; font-variant-numeric: tabular-nums; }
+.take { margin: 0; font-size: 15px; max-width: 110ch; }
+.take b { font-weight: 600; } .take b.bad { color: var(--bad); }
+.src { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.banner { border: 1px solid var(--line); background: var(--panel); border-left: 4px solid var(--warn); border-radius: 6px; padding: 10px 14px; font-size: 13px; }
+
+/* KPIs */
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 10px; }
+.kpi { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; min-width: 0; position: relative; }
+.kpi:hover { border-color: var(--accent); }
+.kpi[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--acc-bg); }
+.kpi .l { font-size: 12px; color: var(--muted); }
+.kpi .n { font-family: var(--f-display); font-size: 30px; line-height: 1.1; font-weight: 500; }
+.kpi .s { font-size: 11px; color: var(--muted); }
+.kpi.bad .n { color: var(--bad); } .kpi.warn .n { color: var(--warn); } .kpi.ok .n { color: var(--ok); }
+
+/* charts */
+.charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.card h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.note { margin: 0; font-size: 12px; color: var(--muted); }
+.chart { position: relative; min-height: 110px; }
+.chart svg { display: block; width: 100%; height: auto; }
+.chart text { font-family: var(--f-body); }
+.chart .hit { cursor: pointer; }
+.tip { position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; box-shadow: var(--shadow); padding: 6px 10px; font-size: 12px; white-space: nowrap; z-index: 3; }
+.tip .k { color: var(--muted); }
+
+/* tabs */
+.tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); overflow-x: auto; }
+.tab { border: 0; background: none; padding: 9px 14px; font-size: 13px; font-weight: 500; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; }
+.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab .cnt { font-family: var(--f-mono); font-size: 11px; background: var(--track); border-radius: 999px; padding: 0 6px; margin-left: 4px; }
+.pane { display: flex; flex-direction: column; gap: 10px; }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.filters input[type=search] { flex: 1 1 220px; max-width: 340px; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
+.filters select { padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font-size: 13px; max-width: 100%; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipf { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; background: var(--acc-bg); color: var(--ink); border: 1px solid var(--accent); border-radius: 999px; padding: 2px 4px 2px 10px; }
+.chipf button { border: 0; background: none; cursor: pointer; padding: 0 6px; font-size: 14px; line-height: 1; color: var(--muted); }
+.count { font-size: 12px; color: var(--muted); margin-left: auto; }
+
+/* table */
+.tbl-wrap { overflow: auto; max-height: 70vh; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+th { position: sticky; top: 0; z-index: 2; background: var(--panel-2); text-align: left; font-weight: 500; font-size: 12px; color: var(--muted); padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th button { all: unset; cursor: pointer; }
+th[aria-sort="ascending"] button::after { content: " ▲"; font-size: 9px; }
+th[aria-sort="descending"] button::after { content: " ▼"; font-size: 9px; }
+td { padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+tbody tr { cursor: pointer; }
+tbody tr:hover td { background: var(--panel-2); }
+tbody tr.sel td { background: var(--acc-bg); }
+td.stripe { padding: 0; width: 4px; }
+tr.r-CRITICAL td.stripe { background: var(--bad); } tr.r-HIGH td.stripe { background: var(--warn); } tr.r-MEDIUM td.stripe { background: var(--accent); }
+.num { text-align: right; white-space: nowrap; }
+.mono { font-family: var(--f-mono); }
+td.key { font-family: var(--f-mono); font-weight: 500; white-space: nowrap; }
+td.dim, span.dim { color: var(--muted); font-style: italic; }
+td.wrap { min-width: 180px; max-width: 320px; }
+td.nowrap { white-space: nowrap; }
+.inl { border: 1px solid transparent; background: transparent; border-radius: 5px; padding: 3px 4px; font-size: 12px; font-weight: 600; cursor: pointer; max-width: 140px; }
+.inl:hover, .inl:focus { border-color: var(--line); background: var(--panel); }
+.inl[disabled] { cursor: default; }
+.st-OPEN { color: var(--accent); } .st-CLOSE { color: var(--ok); } .st-NOT { color: var(--muted); }
+.p-HIGH { color: var(--bad); } .p-MEDIUM { color: var(--accent); } .p-LOW { color: var(--muted); }
+.chip { display: inline-block; padding: 0 8px; border-radius: 999px; font-size: 11px; font-weight: 600; letter-spacing: .02em; border: 1px solid currentColor; white-space: nowrap; }
+.rk-CRITICAL { color: var(--bad); background: var(--bad-bg); } .rk-HIGH { color: var(--warn); background: var(--warn-bg); } .rk-MEDIUM { color: var(--accent); } .rk-LOW { color: var(--muted); } .rk-- { color: var(--muted); border-color: transparent; }
+.cat-comp { color: var(--bad); } .cat-stat { color: var(--warn); } .cat-fol { color: var(--accent); } .cat-data { color: var(--muted); }
+.pbar { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+.pbar i { display: block; width: 52px; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; flex: none; }
+.pbar i s { display: block; height: 100%; background: var(--accent); text-decoration: none; }
+.pbar.full i s { background: var(--ok); }
+.pbar select { width: 66px; text-align: right; }
+.exflag { display: inline-flex; min-width: 20px; justify-content: center; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 0 6px; background: var(--warn-bg); color: var(--warn); }
+.exflag.c { background: var(--bad-bg); color: var(--bad); }
+.empty { padding: 30px; text-align: center; color: var(--muted); }
+
+/* exceptions groups */
+.xgroups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.xg { text-align: left; border: 1px solid var(--line); background: var(--panel); border-radius: 8px; padding: 10px 12px; cursor: pointer; }
+.xg[aria-pressed="true"] { border-color: var(--accent); background: var(--acc-bg); }
+.xg b { font-family: var(--f-display); font-size: 24px; font-weight: 500; display: block; }
+.xg span { font-size: 12px; color: var(--muted); }
+
+/* activity */
+.log { display: flex; flex-direction: column; }
+.log .ev { display: grid; grid-template-columns: 26px 1fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+.log .ev img { width: 26px; height: 26px; border-radius: 50%; }
+.log .who { font-size: 13px; } .log .who b { font-weight: 600; }
+.log .when { font-size: 12px; color: var(--muted); }
+.log ul { margin: 4px 0 0; padding-left: 16px; font-size: 12px; }
+.log .pr { font-family: var(--f-mono); cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); }
+
+ul.notes { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; max-width: 110ch; }
+.mtable td, .mtable th { position: static; font-size: 12px; }
+
+/* drawer */
+.scrim { position: fixed; inset: 0; background: rgba(10, 16, 14, .35); z-index: 40; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; width: min(560px, 100%); background: var(--panel); z-index: 41; box-shadow: var(--shadow); display: flex; flex-direction: column; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); padding-right: env(safe-area-inset-right, 0px); }
+@media (prefers-reduced-motion: no-preference) { .drawer { animation: slidein .18s ease-out; } @keyframes slidein { from { transform: translateX(30px); opacity: .4; } } }
+.dh { display: flex; align-items: flex-start; gap: 10px; padding: 14px 18px; border-bottom: 1px solid var(--line); }
+.dh h3 { margin: 0; font-family: var(--f-display); font-weight: 500; font-size: 22px; }
+.dh .sub { font-size: 12px; color: var(--muted); }
+.dh .x { margin-left: auto; }
+.db { flex: 1; overflow: auto; padding: 14px 18px; display: flex; flex-direction: column; gap: 16px; }
+.df { display: flex; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--line); flex-wrap: wrap; }
+.df .sp { flex: 1; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px; }
+legend { font-size: 11px; font-family: var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; padding: 0; }
+.fld { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.fld.full { grid-column: 1 / -1; }
+.fld label { font-size: 12px; color: var(--muted); }
+.fld input, .fld select, .fld textarea { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); font-size: 13px; }
+.fld textarea { min-height: 60px; resize: vertical; }
+.fld.chg input, .fld.chg select, .fld.chg textarea { border-color: var(--accent); background: var(--acc-bg); }
+.pctrow { display: flex; align-items: center; gap: 8px; } .pctrow input[type=range] { flex: 1; padding: 0; border: 0; background: none; } .pctrow input[type=number] { width: 70px; }
+.calc { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 8px; }
+.calc div { background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+.calc span { display: block; font-size: 11px; color: var(--muted); }
+.calc b { font-size: 15px; font-weight: 600; }
+.dx { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.dx li { font-size: 12px; border-left: 3px solid var(--warn); padding: 4px 8px; background: var(--warn-bg); border-radius: 0 4px 4px 0; }
+.dx li.c { border-color: var(--bad); background: var(--bad-bg); }
+.dx li.ok { border-color: var(--ok); background: var(--ok-bg); }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 12px 9px 16px; border-radius: 8px; font-size: 13px; z-index: 60; display: flex; gap: 12px; align-items: center; box-shadow: var(--shadow); max-width: calc(100% - 32px); }
+.toast button { background: none; border: 1px solid currentColor; color: inherit; border-radius: 5px; padding: 2px 10px; cursor: pointer; font-size: 12px; }
+.toast.err { background: var(--bad); color: #fff; }
+
+@media (max-width: 640px) { fieldset { grid-template-columns: 1fr; } .brand h1 { font-size: 19px; } .hide-sm { display: none; } }
+
+/* save bar + read-only chip */
+.savebar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 35; background: var(--ink); color: var(--bg); padding-bottom: env(safe-area-inset-bottom, 0px); box-shadow: 0 -6px 20px rgba(0,0,0,.18); }
+.savebar .inner { display: flex; align-items: center; gap: 12px; padding-block: 10px; flex-wrap: wrap; }
+.savebar #sb-text { font-weight: 600; }
+.savebar .sb-hint { font-size: 12px; opacity: .75; margin-right: auto; }
+.savebar .sb-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); flex: none; }
+.savebar .btn { background: transparent; color: inherit; border-color: currentColor; }
+.savebar .btn.primary { background: var(--bg); color: var(--ink); border-color: var(--bg); }
+body.has-savebar main.inner { padding-bottom: 110px; }
+.ro { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
+.log .ev.pending .when { color: var(--warn); font-weight: 600; }
+.toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+</style>
+<template id="shell"><header class="bar gut">
+  <div class="inner">
+    <div class="brand">
+      <span class="eb">UK-Med Sudan · Tawila / MERU · Procurement</span>
+      <h1>Sudan PR Tracker</h1>
+    </div>
+    <span class="sync" id="sync"><i></i><span>Connecting…</span></span>
+    <span class="me" id="me"></span>
+    <button class="btn" id="b-html" type="button" hidden>Download web page</button>
+    <button class="btn" id="b-export" type="button" hidden>Export CSV</button>
+    <button class="btn primary" id="b-new" type="button" hidden>+ New PR</button>
+  </div>
+</header>
+
+<main class="inner gut">
+  <div id="banner" class="banner" hidden></div>
+  <div>
+    <p class="take" id="take">Loading the register…</p>
+    <p class="src" id="src">Source: PR Register sheet of MR Follow up Dashboard 4.xls. Days open, aging and risk flag use the workbook's own formulas, calculated to today.</p>
+  </div>
+
+  <section class="kpis" id="kpis" aria-label="Headline figures (click to filter)"></section>
+
+  <section class="charts">
+    <div class="card"><h2>PR lines by stage</h2><p class="note">Click a bar to filter the register.</p><div class="chart" id="c-stage"></div></div>
+    <div class="card"><h2>Open PRs by aging band</h2><p class="note">Days open = today − open date (workbook formula).</p><div class="chart" id="c-aging"></div></div>
+    <div class="card"><h2>Open PRs by priority and risk</h2><p class="note">Risk flag from priority and % complete (workbook formula).</p><div class="chart" id="c-prio"></div></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="t-reg" aria-selected="true" data-p="reg">Register <span class="cnt" id="n-reg">0</span></button>
+    <button class="tab" role="tab" id="t-exc" aria-selected="false" data-p="exc">Exceptions <span class="cnt" id="n-exc">0</span></button>
+    <button class="tab" role="tab" id="t-log" aria-selected="false" data-p="log">Activity log</button>
+    <button class="tab" role="tab" id="t-met" aria-selected="false" data-p="met">Method &amp; notes</button>
+  </nav>
+
+  <section class="pane" id="p-reg">
+    <div class="filters">
+      <input type="search" id="f-q" placeholder="Search PR, item, remark, supplier…" aria-label="Search">
+      <select id="f-stage" aria-label="Stage"><option value="">All stages</option><option>OPEN</option><option>CLOSE</option><option>NOT INITIATED</option></select>
+      <select id="f-priority" aria-label="Priority"><option value="">All priorities</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+      <select id="f-risk" aria-label="Risk"><option value="">All risk flags</option><option>CRITICAL</option><option>HIGH</option><option>MEDIUM</option><option>LOW</option></select>
+      <select id="f-family" aria-label="Family"><option value="">All families</option></select>
+      <button class="btn sm" id="f-clear" type="button">Clear filters</button>
+      <span class="count" id="f-count"></span>
+    </div>
+    <div class="chips" id="f-chips"></div>
+    <div class="tbl-wrap">
+      <table id="reg">
+        <thead><tr>
+          <th></th>
+          <th><button type="button" data-k="n">PR</button></th>
+          <th><button type="button" data-k="item">Item</button></th>
+          <th class="hide-sm"><button type="button" data-k="family">Family</button></th>
+          <th><button type="button" data-k="stage">Stage</button></th>
+          <th><button type="button" data-k="prio_rank">Priority</button></th>
+          <th><button type="button" data-k="risk_rank">Risk</button></th>
+          <th class="num"><button type="button" data-k="pct">% complete</button></th>
+          <th class="num"><button type="button" data-k="days">Days</button></th>
+          <th class="hide-sm"><button type="button" data-k="aging">Aging</button></th>
+          <th><button type="button" data-k="remarks">Remarks / missing</button></th>
+          <th class="hide-sm"><button type="button" data-k="next_action">Next action</button></th>
+          <th class="hide-sm"><button type="button" data-k="action_due">Due</button></th>
+          <th class="num"><button type="button" data-k="nexc">Flags</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="pane" id="p-exc" hidden>
+    <p class="note">Rules checked live against every PR. <b>Close-out compliance</b>: marked closed while a GRN, payment or PO is outstanding (a PR closes only when receipt and financial documents are complete). <b>Status</b>: stage does not match the other fields. <b>Follow-up</b>: overdue next action. <b>Data quality</b>: dates or fields inconsistent or missing. Click a row to fix it.</p>
+    <div class="xgroups" id="xgroups"></div>
+    <div class="tbl-wrap"><table id="exc"><thead><tr><th>PR</th><th>Category</th><th>Check</th><th>Evidence in the register</th><th></th></tr></thead><tbody></tbody></table></div>
+  </section>
+
+  <section class="pane" id="p-log" hidden>
+    <p class="note">Every change saved from this page, newest first: who, when and the before → after value. Unsaved changes are marked until they are published.</p>
+    <div class="card"><div class="log" id="log"></div></div>
+  </section>
+
+  <section class="pane" id="p-met" hidden>
+    <div class="card">
+      <h2>Calculations (identical to the workbook formulas)</h2>
+      <div class="tbl-wrap" style="max-height:none"><table class="mtable"><thead><tr><th>Field</th><th>Rule</th></tr></thead><tbody>
+        <tr><td>Days</td><td>Stage CLOSE: closure date − open date (n/a if either is blank). Otherwise: today − open date (n/a if blank).</td></tr>
+        <tr><td>Aging</td><td>≤7 → 0-7d · ≤15 → 8-15d · ≤30 → 16-30d · otherwise &gt;30d.</td></tr>
+        <tr><td>Risk flag</td><td>CLOSE or NOT INITIATED → –. HIGH priority and &lt;50% → CRITICAL. HIGH and &lt;100% → HIGH. Any priority &lt;50% → MEDIUM. Otherwise LOW.</td></tr>
+        <tr><td>Avg % complete</td><td>Mean % complete of initiated PRs (OPEN + CLOSE).</td></tr>
+        <tr><td>Procurement tier</td><td>From value in GBP (or the GBP equivalent field): Tier 1 £0–500 invoice only · Tier 2 £501–2,500 PO + 1 quote · Tier 3 £2,501–25,000 3 quotes · Tier 4 £25,001–100,000 enhanced 3 quotes · Tier 5 £100,001+ tender. Blank until a value is entered.</td></tr>
+      </tbody></table></div>
+    </div>
+    <div class="card">
+      <h2>Notes on the source workbook (as imported on 20/10/2026)</h2>
+      <ul class="notes">
+        <li>Template A's family chart averaged Logistics over every Logistics row, including the not-initiated rows at 0%. This tracker averages initiated PRs only.</li>
+        <li>Template B's open board did not list PR-005, PR-010, PR-015, PR-023, PR-024, PR-027 or PR-028. This register lists every PR.</li>
+        <li>The workbook cover and footnotes said PRs 23–58 had no data; at import the register held data up to PR-033.</li>
+        <li>Template A and B headers showed 11/10/2026 as the last update; the register header showed 19/10/2026.</li>
+        <li>Item naming was inconsistent ("GH-Office" on PR-024, "GH-OFFICE" elsewhere), and the family list held both "Others" and "Other". Values were imported exactly as written.</li>
+        <li>The source had no value, currency, supplier, PO, GRN or invoice data. Those fields are empty here until the team fills them in; nothing has been estimated.</li>
+      </ul>
+    </div>
+  </section>
+</main>
+
+<div id="drawer-root"></div>
+<div id="toast-root"></div>
+<div class="savebar gut" id="savebar" hidden>
+  <div class="inner">
+    <span class="sb-dot"></span>
+    <span id="sb-text">Unsaved changes</span>
+    <span class="sb-hint hide-sm">Saved changes are visible to everyone with the link.</span>
+    <button class="btn" id="sb-discard" type="button">Discard</button>
+    <button class="btn primary" id="sb-save" type="button">Save &amp; publish</button>
+  </div>
+</div>
+</template>
+<div id="mount"></div>
+<script type="application/json" id="state">{"rev":1,"saveId":null,"savedAt":null,"savedBy":null,"source":{"file":"MR Follow up Dashboard 4.xls","sheet":"PR Register","register_date":"2026-10-19","rows":58,"imported_on":"2026-10-20"},"prs":[{"closure_date":"2026-10-04","family":"Logistics","item":"Kitchen","n":1,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-001","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-14","family":"Logistics","item":"GEN Oil","n":2,"next_action":"","open_date":"2026-10-29","pct":1,"pr":"PR-002","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":3,"next_action":"","open_date":"2026-09-29","pct":0.85,"pr":"PR-003","priority":"HIGH","remarks":"Missing: CBA, sign the contract","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"MERU-CLIN","n":4,"next_action":"","open_date":"2026-09-26","pct":1,"pr":"PR-004","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"GH-OFFICE","n":5,"next_action":"","open_date":"2026-09-29","pct":1,"pr":"PR-005","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-12","family":"Others","item":"Cable","n":6,"next_action":"","open_date":"2026-10-30","pct":1,"pr":"PR-006","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-12","family":"Logistics","item":"Electrical","n":7,"next_action":"","open_date":"2026-09-30","pct":1,"pr":"PR-007","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Spare-parts","n":8,"next_action":"","open_date":"2026-10-13","pct":0.85,"pr":"PR-008","priority":"MEDIUM","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-05","family":"Logistics","item":"Wifi","n":9,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-009","priority":"HIGH","remarks":"Ok","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Drinking-water","n":10,"next_action":"","open_date":"2026-10-03","pct":1,"pr":"PR-010","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Office","n":11,"next_action":"","open_date":"2026-10-12","pct":0.5,"pr":"PR-011","priority":"HIGH","remarks":"Waiting for PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":12,"next_action":"","open_date":"","pct":1,"pr":"PR-012","priority":"MEDIUM","remarks":"CANCEL","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Construction","n":13,"next_action":"","open_date":"2026-10-04","pct":1,"pr":"PR-013","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Fuel","item":"Diesel","n":14,"next_action":"","open_date":"2026-10-30","pct":0.95,"pr":"PR-014","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-06","family":"Fuel","item":"Diesel","n":15,"next_action":"","open_date":"2026-10-06","pct":1,"pr":"PR-015","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-07","family":"Logistics","item":"Logo - Office","n":16,"next_action":"","open_date":"2026-10-01","pct":1,"pr":"PR-016","priority":"MEDIUM","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Repairs","n":17,"next_action":"","open_date":"2026-10-06","pct":0.9,"pr":"PR-017","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":18,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-018","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":19,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-019","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Rooms-items","n":20,"next_action":"","open_date":"2026-10-07","pct":0.2,"pr":"PR-020","priority":"MEDIUM","remarks":"Missing: everything","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Mix-Chad","n":21,"next_action":"","open_date":"2026-10-07","pct":0.5,"pr":"PR-021","priority":"HIGH","remarks":"Only received two of 4","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":22,"next_action":"","open_date":"2026-10-07","pct":1,"pr":"PR-022","priority":"HIGH","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Logo - Office","n":23,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-023","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-13","family":"Logistics","item":"GH-Office","n":24,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-024","priority":"LOW","remarks":"Need to be paid","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Other","n":25,"next_action":"","open_date":"2026-10-12","pct":0.95,"pr":"PR-025","priority":"MEDIUM","remarks":"Need to be paid","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":26,"next_action":"","open_date":"2026-10-12","pct":0.15,"pr":"PR-026","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":27,"next_action":"","open_date":"2026-10-10","pct":0.95,"pr":"PR-027","priority":"LOW","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":28,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-028","priority":"LOW","remarks":"External logo","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":29,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-029","priority":"MEDIUM","remarks":"Ambulance rental (2)","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":30,"next_action":"Use the PR","open_date":"","pct":0,"pr":"PR-030","priority":"","remarks":"CANCEL","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"2026-10-15","family":"Logistics","item":"MERU-CLIN","n":31,"next_action":"","open_date":"2026-10-14","pct":0.95,"pr":"PR-031","priority":"MEDIUM","remarks":"Ceiling fan","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":32,"next_action":"","open_date":"2026-10-01","pct":0.85,"pr":"PR-032","priority":"HIGH","remarks":"Construction and repairs","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":33,"next_action":"","open_date":"2026-10-18","pct":0.85,"pr":"PR-033","priority":"MEDIUM","remarks":"GH-Office partitions","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":34,"next_action":"","open_date":"","pct":0,"pr":"PR-034","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":35,"next_action":"","open_date":"","pct":0,"pr":"PR-035","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":36,"next_action":"","open_date":"","pct":0,"pr":"PR-036","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":37,"next_action":"","open_date":"","pct":0,"pr":"PR-037","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":38,"next_action":"","open_date":"","pct":0,"pr":"PR-038","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":39,"next_action":"","open_date":"","pct":0,"pr":"PR-039","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":40,"next_action":"","open_date":"","pct":0,"pr":"PR-040","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":41,"next_action":"","open_date":"","pct":0,"pr":"PR-041","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":42,"next_action":"","open_date":"","pct":0,"pr":"PR-042","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":43,"next_action":"","open_date":"","pct":0,"pr":"PR-043","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":44,"next_action":"","open_date":"","pct":0,"pr":"PR-044","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":45,"next_action":"","open_date":"","pct":0,"pr":"PR-045","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":46,"next_action":"","open_date":"","pct":0,"pr":"PR-046","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":47,"next_action":"","open_date":"","pct":0,"pr":"PR-047","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":48,"next_action":"","open_date":"","pct":0,"pr":"PR-048","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":49,"next_action":"","open_date":"","pct":0,"pr":"PR-049","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":50,"next_action":"","open_date":"","pct":0,"pr":"PR-050","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":51,"next_action":"","open_date":"","pct":0,"pr":"PR-051","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":52,"next_action":"","open_date":"","pct":0,"pr":"PR-052","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":53,"next_action":"","open_date":"","pct":0,"pr":"PR-053","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":54,"next_action":"","open_date":"","pct":0,"pr":"PR-054","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":55,"next_action":"","open_date":"","pct":0,"pr":"PR-055","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":56,"next_action":"","open_date":"","pct":0,"pr":"PR-056","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":57,"next_action":"","open_date":"","pct":0,"pr":"PR-057","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":58,"next_action":"","open_date":"","pct":0,"pr":"PR-058","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""}],"log":[]}</script>
+<script id="core">/* ===== CORE (pure functions, no DOM) ===== */
+const CORE = (() => {
+  const TIERS = [
+    { t: 1, max: 500, method: 'Invoice only', quotes: 'Not required' },
+    { t: 2, max: 2500, method: 'PO + invoice', quotes: '1 written quote' },
+    { t: 3, max: 25000, method: 'Basic 3-quote', quotes: '3 written quotes' },
+    { t: 4, max: 100000, method: 'Enhanced 3-quote', quotes: '3 written quotes' },
+    { t: 5, max: Infinity, method: 'Tender', quotes: 'Tender' },
+  ];
+  const RISK_RANK = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3, '-': 9 };
+  const PRIO_RANK = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+  const dayNum = (s) => { if (!s) return null; const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d) / 86400000; };
+  const isNum = (v) => typeof v === 'number' && isFinite(v);
+  function derive(r, today) {
+    const pct = isNum(r.pct) ? r.pct : 0;
+    let days = null;
+    if (r.stage === 'CLOSE') { if (r.open_date && r.closure_date) days = dayNum(r.closure_date) - dayNum(r.open_date); }
+    else if (r.open_date) days = dayNum(today) - dayNum(r.open_date);
+    const aging = days == null ? '-' : days <= 7 ? '0-7d' : days <= 15 ? '8-15d' : days <= 30 ? '16-30d' : '>30d';
+    let risk = '-';
+    if (r.stage !== 'CLOSE' && r.stage !== 'NOT INITIATED') {
+      if (r.priority === 'HIGH' && pct < 0.5) risk = 'CRITICAL';
+      else if (r.priority === 'HIGH' && pct < 1) risk = 'HIGH';
+      else if (pct < 0.5) risk = 'MEDIUM';
+      else risk = 'LOW';
+    }
+    const gbp = isNum(r.value_gbp) ? r.value_gbp : (isNum(r.est_value) && String(r.currency || '').toUpperCase() === 'GBP' ? r.est_value : null);
+    const tier = gbp == null ? null : TIERS.find((x) => gbp <= x.max);
+    return { ...r, pct, days, aging, risk, gbp, tier: tier ? tier.t : null, tierInfo: tier || null,
+      risk_rank: RISK_RANK[risk] ?? 9, prio_rank: PRIO_RANK[r.priority] ?? 9 };
+  }
+  function exceptions(rows, today) {
+    const out = [];
+    const add = (r, category, check, evidence) => out.push({ pr: r.pr, category, check, evidence });
+    for (const r of rows) {
+      const rem = r.remarks || '';
+      const init = r.stage === 'OPEN' || r.stage === 'CLOSE';
+      if (r.stage === 'CLOSE' && /GRN/i.test(rem)) add(r, 'Close-out compliance', 'Closed with GRN missing', 'Stage CLOSE; remark "' + rem + '"');
+      if (r.stage === 'CLOSE' && /pa(id|yment)/i.test(rem)) add(r, 'Close-out compliance', 'Closed with payment outstanding', 'Stage CLOSE; remark "' + rem + '"');
+      if (r.stage === 'CLOSE' && r.tier != null && r.tier >= 2 && !r.po_ref) add(r, 'Close-out compliance', 'Closed without PO reference (Tier ' + r.tier + ')', 'Value £' + r.gbp.toLocaleString('en-GB') + '; PO reference blank');
+      if (r.stage === 'CLOSE' && r.pct < 1) add(r, 'Status', 'Closed below 100% complete', 'Stage CLOSE; % complete ' + Math.round(r.pct * 100) + '%');
+      if (r.stage === 'CLOSE' && /cancel/i.test(rem)) add(r, 'Status', 'Cancelled PR recorded as closed', 'Stage CLOSE; remark "' + rem + '"');
+      if (r.stage === 'NOT INITIATED' && /cancel/i.test(rem)) add(r, 'Status', 'Cancelled PR not closed', 'Stage NOT INITIATED; remark "' + rem + '"' + (r.next_action ? '; next action "' + r.next_action + '"' : ''));
+      if (r.stage === 'OPEN' && r.pct === 1) add(r, 'Status', 'Open at 100% complete', 'Stage OPEN; % complete 100%' + (rem ? '; remark "' + rem + '"' : ''));
+      if (r.stage === 'OPEN' && r.closure_date) add(r, 'Status', 'Open with closure date recorded', 'Stage OPEN; closure date ' + r.closure_date);
+      if (r.stage === 'OPEN' && r.action_due && r.action_due < today) add(r, 'Follow-up', 'Next action overdue', 'Due ' + r.action_due + (r.next_action ? '; "' + r.next_action + '"' : ''));
+      if (r.stage === 'CLOSE' && !r.closure_date) add(r, 'Data quality', 'Closed without closure date', 'Stage CLOSE; closure date blank' + (r.open_date ? '' : '; open date blank'));
+      if (r.open_date && r.closure_date && r.open_date > r.closure_date) add(r, 'Data quality', 'Open date after closure date', 'Opened ' + r.open_date + '; closed ' + r.closure_date);
+      if (r.open_date && r.open_date > today) add(r, 'Data quality', 'Open date in the future', 'Opened ' + r.open_date + '; today ' + today);
+      if (init && !rem) add(r, 'Data quality', 'No remarks on initiated PR', 'Stage ' + r.stage + '; remarks blank');
+      if (isNum(r.est_value) && !r.currency) add(r, 'Data quality', 'Value without currency', 'Value ' + r.est_value + '; currency blank');
+      if (isNum(r.est_value) && r.currency && String(r.currency).toUpperCase() !== 'GBP' && !isNum(r.value_gbp)) add(r, 'Data quality', 'No GBP equivalent: tier cannot be set', 'Value ' + r.est_value + ' ' + r.currency + '; GBP equivalent blank');
+    }
+    const ord = { 'Close-out compliance': 0, Status: 1, 'Follow-up': 2, 'Data quality': 3 };
+    return out.sort((a, b) => ord[a.category] - ord[b.category] || a.check.localeCompare(b.check) || a.pr.localeCompare(b.pr));
+  }
+  function kpis(rows, exc, today) {
+    const init = rows.filter((r) => r.stage === 'OPEN' || r.stage === 'CLOSE');
+    const open = rows.filter((r) => r.stage === 'OPEN');
+    const avg = (a) => a.length ? Math.round(a.reduce((s, r) => s + r.pct, 0) / a.length * 1000) / 10 : null;
+    const rc = (f) => open.filter((r) => r.risk === f).length;
+    return {
+      total: rows.length, initiated: init.length, open: open.length,
+      closed: rows.filter((r) => r.stage === 'CLOSE').length,
+      not_initiated: rows.filter((r) => r.stage === 'NOT INITIATED').length,
+      avg_init: avg(init), avg_open: avg(open),
+      critical: rc('CRITICAL'), high: rc('HIGH'), medium: rc('MEDIUM'),
+      open_high_prio: open.filter((r) => r.priority === 'HIGH').length,
+      no_next: open.filter((r) => !r.next_action).length,
+      overdue: open.filter((r) => r.action_due && r.action_due < today).length,
+      exceptions: exc.length, exc_prs: new Set(exc.map((e) => e.pr)).size,
+      comp_prs: new Set(exc.filter((e) => e.category === 'Close-out compliance').map((e) => e.pr)).size,
+    };
+  }
+  return { derive, exceptions, kpis, TIERS };
+})();
+/* ===== END CORE ===== */
+</script>
+<script id="app">
+(async function () {
+  /* ---------- page source pieces (canonical, used to republish) ---------- */
+  const HEAD_PARTS = '<title>Sudan PR Tracker</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Serif:wght@500&family=IBM+Plex+Mono:wght@400;500&display=swap">\n';
+  const RESET = ':root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif}img{max-width:100%}[hidden]{display:none!important}';
+  const SRC = { css: document.getElementById('css').textContent, shell: document.getElementById('shell').innerHTML, core: document.getElementById('core').textContent, app: document.getElementById('app').textContent };
+  let BASE = JSON.parse(document.getElementById('state').textContent);
+  const safeJSON = (o) => JSON.stringify(o).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
+  function buildDocument(state, standalone) {
+    const body = HEAD_PARTS + '<style id="css">' + SRC.css + '</style>\n<template id="shell">' + SRC.shell + '</template>\n<div id="mount"></div>\n<script type="application/json" id="state">' + safeJSON(state) + '<\/script>\n<script id="core">' + SRC.core + '<\/script>\n<script id="app">' + SRC.app + '<\/script>';
+    if (standalone) return '<!doctype html>\n<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + RESET + '</style></head><body>' + body + '</body></html>\n';
+    return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>' + RESET + '</style></head><body>' + body + '</body></html>';
+  }
+
+  /* ---------- mount the shell ---------- */
+  document.getElementById('mount').replaceChildren(document.getElementById('shell').content.cloneNode(true));
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const pad = (n) => String(n).padStart(2, '0');
+  const todayStr = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  const fmtDate = (s) => s ? s.slice(8, 10) + '/' + s.slice(5, 7) + '/' + s.slice(0, 4) : '';
+  const STAGES = ['OPEN', 'CLOSE', 'NOT INITIATED'];
+  const PRIOS = ['HIGH', 'MEDIUM', 'LOW'];
+  const FAMILIES = ['Fuel', 'Lease', 'Logistics', 'Others', 'Rent', 'Other'];
+  const ITEMS = ['Cable', 'Construction', 'Diesel', 'Drinking-water', 'Electrical', 'GEN Oil', 'GH-OFFICE', 'Kitchen', 'Logo - Office', 'MERU-CLIN', 'Mix-Chad', 'Office', 'Repairs', 'Rooms-items', 'Spare-parts', 'Vehicle', 'Wifi', 'Other'];
+  const FIELD_LABEL = { pr: 'PR number', n: 'N', family: 'Family', item: 'Item', priority: 'Priority', validated: 'Validated', stage: 'Stage', pct: '% complete', open_date: 'Open date', closure_date: 'Closure date', responsible: 'Responsible', next_action: 'Next action', action_due: 'Action due', remarks: 'Remarks', est_value: 'Estimated value', currency: 'Currency', value_gbp: 'GBP equivalent', supplier: 'Supplier', po_ref: 'PO reference', grn_ref: 'GRN reference', invoice_ref: 'Invoice reference' };
+  const fmtVal = (k, v) => v == null || v === '' ? '(blank)' : k === 'pct' ? Math.round(v * 100) + '%' : (k === 'open_date' || k === 'closure_date' || k === 'action_due') ? fmtDate(v) : String(v);
+  const normalize = (v) => (v === '' || v === undefined) ? null : v;
+  const same = (a, b) => JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
+
+  const store = { get(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
+  const PKEY = 'sudan-pr-pending', UKEY = 'sudan-pr-ui';
+
+  const state = { work: new Map(), pending: [], rows: [], exc: [], k: null, filters: { q: '', stage: '', priority: '', risk: '', family: '', aging: '', flag: '' }, sort: { k: 'n', d: 1 }, tab: 'reg', canWrite: false, uid: null, selected: null, saving: false };
+  const ui = store.get(UKEY); if (ui) { if (ui.filters) state.filters = { ...state.filters, ...ui.filters }; if (ui.sort) state.sort = ui.sort; if (ui.tab) state.tab = ui.tab; }
+  const saveUi = () => store.set(UKEY, { filters: state.filters, sort: state.sort, tab: state.tab });
+
+  /* ---------- toast ---------- */
+  let toastTimer;
+  function toast(msg, opts = {}) {
+    const root = $('#toast-root'); root.replaceChildren();
+    const t = el('div', 'toast' + (opts.err ? ' err' : '')); t.setAttribute('role', 'status');
+    t.append(el('span', '', msg));
+    if (opts.undo) { const b = el('button', '', 'Undo'); b.type = 'button'; b.onclick = () => { root.replaceChildren(); opts.undo(); }; t.append(b); }
+    root.append(t); clearTimeout(toastTimer); toastTimer = setTimeout(() => root.replaceChildren(), opts.undo ? 7000 : 4000);
+  }
+  function setSync(cls, text) { const s = $('#sync'); s.className = 'sync ' + cls; s.lastElementChild.textContent = text; }
+
+  /* ---------- capabilities (all optional: the page works offline/read-only) ---------- */
+  const C = window.claude && typeof window.claude.use === 'function' ? window.claude : null;
+  const use = (n) => C ? C.use(n).catch(() => null) : Promise.resolve(null);
+  const [artifact, user, downloads] = await Promise.all([use('artifact'), use('user'), use('downloads')]);
+  if (user) {
+    state.uid = await user.id();
+    state.canWrite = !!artifact && (await user.canEdit()) === true;
+    const me = await user.me();
+    if (state.canWrite) { const img = el('img'); img.src = me.avatarUrl; img.alt = ''; $('#me').append(img, el('span', 'hide-sm', me.name || 'Editor')); }
+  }
+  if (!state.canWrite) $('#me').append(el('span', 'ro', 'View only'));
+  if (state.canWrite) $('#b-new').hidden = false;
+  if (downloads) { $('#b-export').hidden = false; $('#b-html').hidden = false; }
+  const OFFLINE = !C;
+  let editorName = ''; try { editorName = localStorage.getItem('sudan-pr-editor') || ''; } catch (e) {}
+  if (OFFLINE) {
+    $('#b-export').hidden = false; $('#b-html').hidden = false;
+    const eb = el('button', 'btn', 'Edit a copy'); eb.type = 'button'; eb.id = 'b-editcopy'; $('#b-new').before(eb);
+    eb.onclick = () => enterOfflineEdit();
+    const st0 = store.get('sudan-pr-pending'); if (st0 && st0.entries && st0.entries.length) state.canWrite = true;
+  }
+
+  /* ---------- working copy = saved state + this editor's unsaved changes ---------- */
+  function applyEntry(map, e) {
+    if (e.action === 'create') { map.set(e.pr, { ...e.doc }); return; }
+    const d = map.get(e.pr); if (!d) return;
+    const nd = { ...d }; (e.changes || []).forEach((c) => { nd[c.field] = c.to; }); map.set(e.pr, nd);
+  }
+  function rebuildWork() {
+    const m = new Map(BASE.prs.map((d) => [d.pr, d]));
+    state.pending.forEach((e) => applyEntry(m, e));
+    state.work = m;
+  }
+  const stash = store.get(PKEY);
+  let restoredNote = '';
+  if (stash && stash.entries && stash.entries.length && state.canWrite) {
+    if (stash.saveId && stash.saveId === BASE.saveId) { store.del(PKEY); toast('Saved and published. Everyone with the link now sees the update.'); }
+    else {
+      state.pending = stash.entries;
+      if (stash.baseRev !== BASE.rev) restoredNote = 'Another editor published a newer version first. Your ' + stash.entries.length + ' unsaved change(s) were re-applied on top of it — review and save again.';
+    }
+  }
+  const persistPending = (saveId) => { if (state.pending.length) store.set(PKEY, { baseRev: BASE.rev, saveId: saveId || null, entries: state.pending }); else store.del(PKEY); };
+  rebuildWork();
+
+  function addChange(pr, patch, opts = {}) {
+    if (!state.canWrite) return false;
+    const before = state.work.get(pr); if (!before) return false;
+    const changes = Object.keys(patch).filter((k) => !same(before[k], patch[k])).map((k) => ({ field: k, from: normalize(before[k]), to: normalize(patch[k]) }));
+    if (!changes.length) return true;
+    const entry = { at: new Date().toISOString(), by: state.uid, pr, action: 'update', changes }; if (OFFLINE && editorName) entry.name = editorName;
+    state.pending.push(entry); persistPending(); rebuildWork(); recompute(); render();
+    if (!opts.silent) toast(pr + ': ' + changes.map((c) => FIELD_LABEL[c.field] || c.field).join(', ') + ' changed — not yet published', { undo: () => { const i = state.pending.lastIndexOf(entry); if (i >= 0) { state.pending.splice(i, 1); persistPending(); rebuildWork(); recompute(); render(); if (state.selected === pr) openDrawer(pr); } } });
+    return true;
+  }
+  function addCreate(doc) {
+    const entry = { at: new Date().toISOString(), by: state.uid, pr: doc.pr, action: 'create', doc, changes: Object.keys(doc).filter((k) => k !== 'n' && doc[k] != null && doc[k] !== '').map((k) => ({ field: k, from: null, to: doc[k] })) }; if (OFFLINE && editorName) entry.name = editorName;
+    state.pending.push(entry); persistPending(); rebuildWork(); recompute(); render();
+    toast(doc.pr + ' added — not yet published');
+  }
+
+  /* ---------- save & publish ---------- */
+  async function saveAndPublish() {
+    if (!state.pending.length || state.saving) return;
+    if (!artifact) { if (OFFLINE) return offlineDownload(); toast('Saving is not available in this copy of the page.', { err: true }); return; }
+    state.saving = true; $('#sb-save').disabled = true; $('#sb-save').textContent = 'Publishing…'; setSync('live', 'Publishing…');
+    const saveId = Math.random().toString(36).slice(2) + Date.now().toString(36);
+    const next = buildNext(saveId);
+    persistPending(saveId);
+    const attempt = () => artifact.publish(buildDocument(next, false));
+    try {
+      try { await attempt(); }
+      catch (e) { if (e && e.code === 'upstream_error') { await new Promise((r) => setTimeout(r, 800 + Math.random() * 900)); await attempt(); } else throw e; }
+      setSync('live', 'Published');
+    } catch (e) {
+      const code = e && e.code;
+      if (code === 'conflict') { setSync('live', 'Reloading…'); return; }
+      persistPending(null);
+      state.saving = false; $('#sb-save').disabled = false; $('#sb-save').textContent = 'Save & publish';
+      if (code === 'not_writer' || code === 'not_granted' || code === 'not_declared' || code === 'capability_disabled' || code === 'capability_removed' || code === 'consent_required') {
+        toast('Saving from the page is not available for your access. Your changes are kept in this tab; ask the owner for Editor access.', { err: true });
+      } else if (code === 'rate_limited') toast('Publishing too often. Wait a minute and save again — your changes are kept.', { err: true });
+      else if (code === 'too_large') toast('The page is too large to save. Contact the page owner.', { err: true });
+      else toast('Could not publish. Your changes are kept in this tab; try again.', { err: true });
+      setSync('err', 'Not published');
+    }
+  }
+  function buildNext(saveId) {
+    const prs = [...state.work.values()].map((d) => ({ ...d })).sort((a, b) => (a.n || 0) - (b.n || 0) || String(a.pr).localeCompare(String(b.pr)));
+    const log = state.pending.slice().reverse().map((e) => { const o = { at: e.at, by: e.by, pr: e.pr, action: e.action, changes: e.changes }; if (e.name) o.name = e.name; return o; }).concat(BASE.log || []).slice(0, 1500);
+    return { rev: (BASE.rev || 0) + 1, saveId, savedAt: new Date().toISOString(), savedBy: state.uid, source: BASE.source, prs, log };
+  }
+  async function saveFile(name, data, mime) {
+    if (downloads) return downloads.save({ filename: name, data });
+    const blob = new Blob([data], { type: mime + ';charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; a.hidden = true; document.body.append(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    return { status: 'saved' };
+  }
+  async function offlineDownload() {
+    if (!state.pending.length) return;
+    const next = buildNext(Math.random().toString(36).slice(2) + Date.now().toString(36));
+    await saveFile('index.html', buildDocument(next, true), 'text/html');
+    BASE = next; state.pending = []; persistPending(); rebuildWork(); recompute(); render(); renderSource();
+    toast('Updated page downloaded as index.html. Upload it to GitHub to update the public link.');
+  }
+  function enterOfflineEdit() {
+    state.canWrite = true; $('#b-new').hidden = false;
+    const eb = $('#b-editcopy'); if (eb) eb.hidden = true;
+    const ro = $('#me .ro'); if (ro) ro.textContent = 'Editing a copy';
+    $('#sb-save').textContent = 'Download updated page';
+    const hint = $('.sb-hint'); if (hint) hint.textContent = 'Changes stay in this browser until you download the updated page.';
+    const b = $('#banner'); b.hidden = false;
+    b.replaceChildren(el('span', '', 'Editing a local copy. Your changes stay in this browser. When done, click "Download updated page" and upload that index.html to GitHub to update the public link. Your name for the change log: '));
+    const inp = el('input'); inp.id = 'editor-name'; inp.value = editorName; inp.placeholder = 'Your name'; inp.setAttribute('aria-label', 'Your name for the change log');
+    inp.style.cssText = 'padding:4px 8px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--ink);margin-left:6px;max-width:100%';
+    inp.oninput = () => { editorName = inp.value.trim(); try { localStorage.setItem('sudan-pr-editor', editorName); } catch (e) {} };
+    b.append(inp);
+    if (restoredNote) b.append(el('div', '', restoredNote));
+    render();
+  }
+  $('#sb-save').onclick = saveAndPublish;
+  $('#sb-discard').onclick = () => {
+    if ($('#sb-discard').dataset.confirm !== '1') { $('#sb-discard').dataset.confirm = '1'; $('#sb-discard').textContent = 'Click again to discard'; setTimeout(() => { const b = $('#sb-discard'); if (b) { b.dataset.confirm = ''; b.textContent = 'Discard'; } }, 3500); return; }
+    state.pending = []; persistPending(); rebuildWork(); recompute(); render(); if (state.selected) closeDrawer(); toast('Unsaved changes discarded');
+    $('#sb-discard').dataset.confirm = ''; $('#sb-discard').textContent = 'Discard';
+  };
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && state.canWrite) { e.preventDefault(); if (state.selected) doSave(); else saveAndPublish(); } });
+  function renderSavebar() {
+    const n = state.pending.length, bar = $('#savebar');
+    bar.hidden = !(state.canWrite && n); document.body.classList.toggle('has-savebar', !bar.hidden);
+    const prs = new Set(state.pending.map((e) => e.pr)).size;
+    $('#sb-text').textContent = n + ' unsaved change' + (n === 1 ? '' : 's') + ' on ' + prs + ' PR' + (prs === 1 ? '' : 's');
+  }
+
+  /* ---------- derived data ---------- */
+  function recompute() {
+    const today = todayStr();
+    state.rows = [...state.work.entries()].map(([id, r]) => CORE.derive({ ...r, _id: id }, today));
+    state.exc = CORE.exceptions(state.rows, today);
+    const byPr = new Map(); state.exc.forEach((e) => byPr.set(e.pr, (byPr.get(e.pr) || []).concat(e)));
+    state.rows.forEach((r) => { r.excList = byPr.get(r.pr) || []; r.nexc = r.excList.length; });
+    state.k = CORE.kpis(state.rows, state.exc, today);
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    if (!state.rows.length) $('#take').textContent = 'The register is empty.';
+    else renderTake();
+    renderKpis(); renderCharts(); renderFamilies(); renderTable(); renderExc(); renderSavebar();
+    if (state.tab === 'log') renderLog();
+    $('#n-reg').textContent = state.rows.length; $('#n-exc').textContent = state.exc.length;
+  }
+  function renderTake() {
+    const k = state.k, t = $('#take'); t.replaceChildren();
+    const s = (x, b, c) => t.append(b ? el('b', c || '', x) : document.createTextNode(x));
+    s(k.closed + ' of ' + k.total, 1); s(' PR lines closed, '); s(String(k.open), 1); s(' open and '); s(String(k.not_initiated), 1); s(' not initiated. Open PRs: ');
+    s(k.critical + ' Critical', 1, 'bad'); s(', '); s(k.high + ' High', 1); s(' risk; '); s(String(k.no_next), 1); s(k.no_next === 1 ? ' has no next action' : ' have no next action');
+    if (k.overdue) { s(' and '); s(k.overdue + (k.overdue === 1 ? ' is overdue' : ' are overdue'), 1, 'bad'); }
+    s('. '); s(String(k.exceptions), 1); s(' register exceptions');
+    if (k.comp_prs) { s(', including '); s(k.comp_prs + ' PRs closed with GRN, payment or PO outstanding', 1, 'bad'); }
+    s('.');
+  }
+  function renderSource() {
+    const m = BASE.source || {};
+    let t = 'Imported from ' + (m.file || 'source file') + ' (' + (m.sheet || '') + ', register date ' + fmtDate(m.register_date) + ', ' + m.rows + ' lines) on ' + fmtDate(m.imported_on) + '.';
+    if (BASE.savedAt) t += ' Last published ' + new Date(BASE.savedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) + '.';
+    t += ' Days open, aging and risk flag use the workbook’s own formulas, calculated to today (' + fmtDate(todayStr()) + ').';
+    $('#src').textContent = t;
+  }
+  function renderKpis() {
+    const k = state.k, f = state.filters;
+    const tiles = [
+      { l: 'PR lines', n: k.total, s: k.initiated + ' initiated', act: () => setFilters({}), on: !Object.values(f).some(Boolean) },
+      { l: 'Open', n: k.open, s: k.open_high_prio + ' High priority', act: () => setFilters({ stage: 'OPEN' }), on: f.stage === 'OPEN' && !f.risk && !f.flag && !f.aging && !f.priority },
+      { l: 'Closed', n: k.closed, s: 'Stage CLOSE', cls: 'ok', act: () => setFilters({ stage: 'CLOSE' }), on: f.stage === 'CLOSE' },
+      { l: 'Not initiated', n: k.not_initiated, s: 'No item or dates yet', act: () => setFilters({ stage: 'NOT INITIATED' }), on: f.stage === 'NOT INITIATED' },
+      { l: 'Avg % complete', n: k.avg_init == null ? '—' : k.avg_init.toFixed(1) + '%', s: 'Open only: ' + (k.avg_open == null ? '—' : k.avg_open.toFixed(1) + '%'), act: () => setFilters({ stage: 'OPEN' }), on: false },
+      { l: 'Critical + High', n: k.critical + k.high, s: k.critical + ' Critical · ' + k.high + ' High', cls: 'bad', act: () => setFilters({ stage: 'OPEN', flag: 'crithigh' }), on: f.flag === 'crithigh' },
+      { l: 'No next action', n: k.no_next, s: 'Open PRs' + (k.overdue ? ' · ' + k.overdue + ' overdue' : ''), cls: 'warn', act: () => setFilters({ stage: 'OPEN', flag: 'nonext' }), on: f.flag === 'nonext' },
+      { l: 'Exceptions', n: k.exceptions, s: k.exc_prs + ' PRs affected', cls: 'warn', act: () => setFilters({ flag: 'exc' }), on: f.flag === 'exc' },
+    ];
+    $('#kpis').replaceChildren(...tiles.map((t) => {
+      const b = el('button', 'kpi ' + (t.cls || '')); b.type = 'button'; b.setAttribute('aria-pressed', String(!!t.on));
+      b.append(el('span', 'l', t.l), el('span', 'n', String(t.n)), el('span', 's', t.s)); b.onclick = () => { t.act(); showTab('reg'); };
+      return b;
+    }));
+  }
+
+  /* ---------- charts ---------- */
+  const NS = 'http://www.w3.org/2000/svg';
+  const sv = (tag, a, p) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); if (p) p.appendChild(e); return e; };
+  function tipFor(host) {
+    if (host._tip) return host._tip;
+    const t = el('div', 'tip'); t.hidden = true; host.append(t);
+    return host._tip = {
+      show(ev, k, lines) { t.replaceChildren(el('div', 'k', k), ...lines.map((l) => el('div', '', l))); t.hidden = false;
+        const hb = host.getBoundingClientRect(); let x = ev.clientX - hb.left + 12; if (x + t.offsetWidth > hb.width) x = Math.max(0, ev.clientX - hb.left - t.offsetWidth - 12);
+        t.style.left = x + 'px'; t.style.top = (ev.clientY - hb.top + 12) + 'px'; },
+      hide() { t.hidden = true; },
+    };
+  }
+  function hbars(host, data, legend, denom) {
+    host.querySelector('svg')?.remove();
+    const W = Math.max(280, host.clientWidth || 360), bh = 24, gap = 10, lg = legend ? 24 : 0, H = lg + data.length * (bh + gap);
+    const svg = sv('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img' }); host.prepend(svg);
+    const tip = tipFor(host);
+    const m = (txt, w) => { const t = sv('text', { 'font-size': 12, 'font-weight': w || 400 }, svg); t.textContent = txt; const x = t.getComputedTextLength(); t.remove(); return x; };
+    if (legend) { let lx = 0; legend.forEach(([n, c]) => { sv('rect', { x: lx, y: 4, width: 10, height: 10, rx: 2, fill: c }, svg); const t = sv('text', { x: lx + 14, y: 13, 'font-size': 11, fill: 'var(--muted)' }, svg); t.textContent = n; lx += 28 + t.getComputedTextLength(); }); }
+    const lw = Math.max(...data.map((d) => m(d.label))), vw = m('000 (100%)', 600);
+    const x0 = lw + 10, span = Math.max(20, W - x0 - vw - 8), max = Math.max(1, ...data.map((d) => d.total));
+    data.forEach((d, i) => {
+      const y = lg + i * (bh + gap);
+      const lab = sv('text', { x: 0, y: y + bh / 2, dy: '0.35em', 'font-size': 12, fill: d.active ? 'var(--accent)' : 'var(--ink)', 'font-weight': d.active ? 600 : 400 }, svg); lab.textContent = d.label;
+      sv('rect', { x: x0, y, width: span, height: bh, rx: 4, fill: 'var(--track)' }, svg);
+      let cx = x0;
+      d.segs.forEach((s) => { if (!s.v) return; const w = s.v / max * span; sv('rect', { x: cx, y, width: Math.max(2, w - (d.segs.length > 1 ? 2 : 0)), height: bh, rx: 4, fill: s.color }, svg); cx += w; });
+      const v = sv('text', { x: cx + 6, y: y + bh / 2, dy: '0.35em', 'font-size': 12, 'font-weight': 600, fill: 'var(--ink)' }, svg);
+      v.textContent = denom ? `${d.total} (${Math.round(d.total / denom * 100)}%)` : String(d.total);
+      const hit = sv('rect', { class: 'hit', x: 0, y: y - gap / 2, width: W, height: bh + gap, fill: 'transparent', tabindex: 0, role: 'button', 'aria-label': d.label + ': ' + d.total }, svg);
+      hit.addEventListener('mousemove', (ev) => tip.show(ev, d.tipK, d.tipLines.concat('Click to filter')));
+      hit.addEventListener('mouseleave', () => tip.hide());
+      hit.addEventListener('click', () => { tip.hide(); d.click(); });
+      hit.addEventListener('keydown', (ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); d.click(); } });
+    });
+  }
+  function renderCharts() {
+    const rows = state.rows, open = rows.filter((r) => r.stage === 'OPEN'), f = state.filters;
+    const st = [['CLOSE', 'Closed', 'var(--ok)'], ['OPEN', 'Open', 'var(--accent)'], ['NOT INITIATED', 'Not initiated', 'var(--neutral)']];
+    hbars($('#c-stage'), st.map(([s, l, c]) => { const n = rows.filter((r) => r.stage === s).length; return { label: l, total: n, active: f.stage === s, segs: [{ v: n, color: c }], tipK: l, tipLines: [n + ' of ' + rows.length + ' PR lines'], click: () => { setFilters({ stage: f.stage === s ? '' : s }); showTab('reg'); } }; }), null, rows.length);
+    const bands = ['0-7d', '8-15d', '16-30d', '>30d'];
+    hbars($('#c-aging'), bands.filter((b) => b !== '>30d' || open.some((r) => r.aging === b)).map((b) => { const n = open.filter((r) => r.aging === b).length; return { label: b, total: n, active: f.aging === b, segs: [{ v: n, color: b === '16-30d' || b === '>30d' ? 'var(--bad)' : 'var(--accent)' }], tipK: 'Aging ' + b, tipLines: [n + ' of ' + open.length + ' open PRs'], click: () => { setFilters({ stage: 'OPEN', aging: f.aging === b ? '' : b }); showTab('reg'); } }; }), null, open.length);
+    const rk = [['CRITICAL', 'Critical', 'var(--bad)'], ['HIGH', 'High', 'var(--warn)'], ['MEDIUM', 'Medium', 'var(--accent)'], ['LOW', 'Low', 'var(--neutral)']];
+    hbars($('#c-prio'), PRIOS.map((p) => { const ps = open.filter((r) => r.priority === p); const segs = rk.map(([k, n, c]) => ({ v: ps.filter((r) => r.risk === k).length, color: c, name: n })); const l = p.charAt(0) + p.slice(1).toLowerCase();
+      return { label: l, total: ps.length, active: f.priority === p, segs, tipK: l + ' priority · ' + ps.length + ' open', tipLines: segs.filter((s) => s.v).map((s) => s.name + ' risk: ' + s.v), click: () => { setFilters({ stage: 'OPEN', priority: f.priority === p ? '' : p }); showTab('reg'); } }; }), rk.map(([, n, c]) => [n, c]), null);
+  }
+  let rsz; window.addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderCharts, 150); });
+
+  /* ---------- filters ---------- */
+  function setFilters(patch, replace = true) {
+    state.filters = replace ? { q: state.filters.q, stage: '', priority: '', risk: '', family: '', aging: '', flag: '', ...patch } : { ...state.filters, ...patch };
+    saveUi(); syncFilterInputs(); renderKpis(); renderCharts(); renderTable();
+  }
+  function syncFilterInputs() { const f = state.filters; $('#f-q').value = f.q; $('#f-stage').value = f.stage; $('#f-priority').value = f.priority; $('#f-risk').value = f.risk; $('#f-family').value = f.family; }
+  function renderFamilies() {
+    const sel = $('#f-family'), cur = state.filters.family;
+    const fams = [...new Set(state.rows.map((r) => r.family).filter(Boolean))].sort();
+    sel.replaceChildren(new Option('All families', ''), ...fams.map((f) => new Option(f, f))); sel.value = cur;
+  }
+  $('#f-q').addEventListener('input', (e) => { state.filters.q = e.target.value; saveUi(); renderTable(); });
+  ['stage', 'priority', 'risk', 'family'].forEach((k) => $('#f-' + k).addEventListener('change', (e) => setFilters({ [k]: e.target.value }, false)));
+  $('#f-clear').onclick = () => { state.filters.q = ''; setFilters({}); };
+  const FLAG_LABEL = { crithigh: 'Critical or High risk', nonext: 'No next action', exc: 'Has exceptions' };
+  function filtered() {
+    const f = state.filters, q = f.q.trim().toLowerCase();
+    return state.rows.filter((r) => (!f.stage || r.stage === f.stage) && (!f.priority || r.priority === f.priority) && (!f.risk || r.risk === f.risk) && (!f.family || r.family === f.family) && (!f.aging || r.aging === f.aging)
+      && (!f.flag || (f.flag === 'crithigh' ? (r.risk === 'CRITICAL' || r.risk === 'HIGH') : f.flag === 'nonext' ? !r.next_action : f.flag === 'exc' ? r.nexc > 0 : true))
+      && (!q || [r.pr, r.item, r.family, r.remarks, r.next_action, r.responsible, r.supplier, r.po_ref, r.stage, r.priority].join(' ').toLowerCase().includes(q)));
+  }
+
+  /* ---------- register table ---------- */
+  $$('#reg th button').forEach((b) => b.addEventListener('click', () => {
+    const k = b.dataset.k; state.sort = state.sort.k === k ? { k, d: -state.sort.d } : { k, d: 1 }; saveUi(); renderTable();
+  }));
+  function cmp(a, b, k) {
+    const va = a[k], vb = b[k];
+    const ea = va == null || va === '' || va === '-', eb = vb == null || vb === '' || vb === '-';
+    if (ea && eb) return 0; if (ea) return 1; if (eb) return -1;
+    return typeof va === 'number' ? va - vb : String(va).localeCompare(String(vb));
+  }
+  const PCT_OPTS = Array.from({ length: 21 }, (_, i) => i * 5);
+  function inlineSelect(r, field, opts, cls, fmt) {
+    const cur = field === 'pct' ? Math.round(r.pct * 100) : (r[field] || '');
+    if (!state.canWrite) { return el('span', 'inl ' + cls, field === 'pct' ? cur + '%' : (cur || '—')); }
+    const s = el('select', 'inl ' + cls); s.setAttribute('aria-label', FIELD_LABEL[field] + ' for ' + r.pr);
+    const list = opts.slice(); if (!list.map(String).includes(String(cur))) list.unshift(cur);
+    list.forEach((o) => s.append(new Option(fmt ? fmt(o) : (o === '' ? '—' : o), o)));
+    s.value = String(cur);
+    s.addEventListener('click', (e) => e.stopPropagation());
+    s.addEventListener('keydown', (e) => e.stopPropagation());
+    s.addEventListener('change', () => { const v = field === 'pct' ? Number(s.value) / 100 : s.value; addChange(r._id, { [field]: v }); });
+    return s;
+  }
+  function txt(tr, v, cls) { const c = el('td', cls || ''); if (v == null || v === '') { c.textContent = '—'; c.classList.add('dim'); } else c.textContent = String(v); tr.append(c); return c; }
+  const pendingPrs = () => new Set(state.pending.map((e) => e.pr));
+  function renderTable() {
+    const rows = filtered().sort((a, b) => cmp(a, b, state.sort.k) * state.sort.d || a.n - b.n);
+    $$('#reg th').forEach((th) => { const b = th.querySelector('button'); th.removeAttribute('aria-sort'); if (b && b.dataset.k === state.sort.k) th.setAttribute('aria-sort', state.sort.d === 1 ? 'ascending' : 'descending'); });
+    $('#f-count').textContent = rows.length + ' of ' + state.rows.length + ' PRs';
+    const chips = $('#f-chips'); chips.replaceChildren();
+    const f = state.filters;
+    [['stage', 'Stage'], ['priority', 'Priority'], ['risk', 'Risk'], ['family', 'Family'], ['aging', 'Aging'], ['flag', '']].forEach(([k, l]) => {
+      if (!f[k]) return; const c = el('span', 'chipf', (l ? l + ': ' : '') + (k === 'flag' ? FLAG_LABEL[f[k]] : f[k])); const x = el('button', '', '×'); x.type = 'button'; x.setAttribute('aria-label', 'Remove filter'); x.onclick = () => setFilters({ [k]: '' }, false); c.append(x); chips.append(c);
+    });
+    const tb = $('#reg tbody'); const pend = pendingPrs();
+    if (!rows.length) { const tr = el('tr'); const td = el('td', 'empty', state.rows.length ? 'No PRs match these filters.' : 'No PRs yet.'); td.colSpan = 14; tr.append(td); tb.replaceChildren(tr); return; }
+    tb.replaceChildren(...rows.map((r) => {
+      const tr = el('tr', 'r-' + r.risk + (state.selected === r._id ? ' sel' : '')); tr.tabIndex = 0;
+      tr.append(el('td', 'stripe'));
+      const key = txt(tr, r.pr, 'key'); if (pend.has(r.pr)) { key.append(el('span', '', ' •')); key.title = 'Unsaved changes'; key.style.color = 'var(--warn)'; }
+      txt(tr, r.item, 'nowrap'); txt(tr, r.family, 'hide-sm');
+      const st = el('td'); st.append(inlineSelect(r, 'stage', STAGES, 'st-' + (r.stage || '').split(' ')[0])); tr.append(st);
+      const pr = el('td'); pr.append(inlineSelect(r, 'priority', PRIOS, 'p-' + r.priority)); tr.append(pr);
+      const rk = el('td'); rk.append(el('span', 'chip rk-' + r.risk, r.risk === '-' ? '–' : r.risk)); tr.append(rk);
+      const pc = el('td', 'num'); const pb = el('div', 'pbar' + (r.pct >= 1 ? ' full' : '')); const i = el('i'); const s = el('s'); s.style.width = Math.min(100, r.pct * 100) + '%'; i.append(s);
+      pb.append(i, inlineSelect(r, 'pct', PCT_OPTS, '', (o) => o + '%')); pc.append(pb); tr.append(pc);
+      txt(tr, r.days, 'num'); txt(tr, r.aging === '-' ? '' : r.aging, 'hide-sm nowrap');
+      txt(tr, r.remarks, 'wrap'); txt(tr, r.next_action, 'wrap hide-sm');
+      const due = txt(tr, fmtDate(r.action_due), 'hide-sm nowrap'); if (r.action_due && r.action_due < todayStr() && r.stage === 'OPEN') { due.style.color = 'var(--bad)'; due.style.fontWeight = 600; }
+      const fx = el('td', 'num'); if (r.nexc) { const comp = r.excList.some((e) => e.category === 'Close-out compliance'); const b = el('span', 'exflag' + (comp ? ' c' : ''), String(r.nexc)); b.title = r.excList.map((e) => e.check).join('\n'); fx.append(b); } tr.append(fx);
+      tr.addEventListener('click', () => openDrawer(r._id));
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === tr) openDrawer(r._id); });
+      return tr;
+    }));
+  }
+
+  /* ---------- exceptions ---------- */
+  let excCat = '';
+  function renderExc() {
+    const cats = [['Close-out compliance', 'cat-comp'], ['Status', 'cat-stat'], ['Follow-up', 'cat-fol'], ['Data quality', 'cat-data']];
+    $('#xgroups').replaceChildren(...[['', 'All exceptions']].concat(cats.map(([c]) => [c, c])).map(([c, l]) => {
+      const n = state.exc.filter((e) => !c || e.category === c).length;
+      const b = el('button', 'xg'); b.type = 'button'; b.setAttribute('aria-pressed', String(excCat === c));
+      const nb = el('b', '', String(n)); if (c === 'Close-out compliance' && n) nb.style.color = 'var(--bad)';
+      b.append(nb, el('span', '', l)); b.onclick = () => { excCat = c; renderExc(); }; return b;
+    }));
+    const cls = Object.fromEntries(cats);
+    const list = state.exc.filter((e) => !excCat || e.category === excCat);
+    const tb = $('#exc tbody');
+    if (!list.length) { const tr = el('tr'); const td = el('td', 'empty', 'No exceptions in this category.'); td.colSpan = 5; tr.append(td); tb.replaceChildren(tr); return; }
+    tb.replaceChildren(...list.map((e) => {
+      const tr = el('tr'); txt(tr, e.pr, 'key');
+      const c = el('td'); c.append(el('span', 'chip ' + cls[e.category], e.category)); tr.append(c);
+      txt(tr, e.check); txt(tr, e.evidence, 'wrap');
+      const a = el('td', 'num'); const b = el('button', 'btn sm', state.canWrite ? 'Fix' : 'View'); b.type = 'button'; a.append(b); tr.append(a);
+      tr.addEventListener('click', () => openDrawer(e.pr));
+      return tr;
+    }));
+  }
+
+  /* ---------- activity log ---------- */
+  async function renderLog() {
+    const box = $('#log');
+    const items = state.pending.slice().reverse().map((e) => ({ ...e, _pending: true })).concat(BASE.log || []);
+    if (!items.length) { box.replaceChildren(el('div', 'empty', 'No changes yet. Changes saved from this page will appear here.')); return; }
+    const ids = [...new Set(items.map((l) => l.by).filter(Boolean))];
+    const ps = user && ids.length ? await user.profiles(ids) : {};
+    box.replaceChildren(...items.slice(0, 400).map((l) => logItem(l, ps)));
+  }
+  function logItem(l, ps) {
+    const ev = el('div', 'ev' + (l._pending ? ' pending' : '')); const p = ps[l.by];
+    const img = el('img'); img.alt = ''; if (p && p.avatarUrl) img.src = p.avatarUrl; else img.style.visibility = 'hidden'; ev.append(img);
+    const body = el('div'); const who = el('div', 'who');
+    who.append(el('b', '', (p && p.name) || l.name || 'Editor'), document.createTextNode(l.action === 'create' ? ' created ' : ' updated '));
+    const pr = el('span', 'pr', l.pr); pr.tabIndex = 0; pr.onclick = () => { if (state.work.has(l.pr)) openDrawer(l.pr); }; who.append(pr);
+    body.append(who, el('div', 'when', (l._pending ? 'Unsaved · ' : '') + (l.at ? new Date(l.at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '')));
+    const ul = el('ul'); (l.changes || []).forEach((c) => ul.append(el('li', '', (FIELD_LABEL[c.field] || c.field) + ': ' + fmtVal(c.field, c.from) + ' → ' + fmtVal(c.field, c.to)))); body.append(ul);
+    ev.append(body); return ev;
+  }
+
+  /* ---------- tabs ---------- */
+  function showTab(t) {
+    state.tab = t; saveUi(); $$('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === t)));
+    ['reg', 'exc', 'log', 'met'].forEach((p) => { $('#p-' + p).hidden = p !== t; });
+    if (t === 'log') renderLog();
+  }
+  $$('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.p)));
+
+  /* ---------- drawer (PR editor) ---------- */
+  const FORM = [
+    ['Identification', [['pr', 'text'], ['family', 'list', FAMILIES], ['item', 'list', ITEMS], ['priority', 'select', ['', ...PRIOS]], ['validated', 'select', ['', 'Yes', 'No', 'Pending']]]],
+    ['Status', [['stage', 'select', STAGES], ['pct', 'pct'], ['open_date', 'date'], ['closure_date', 'date']]],
+    ['Follow-up', [['responsible', 'text'], ['action_due', 'date'], ['next_action', 'text', null, true], ['remarks', 'area', null, true]]],
+    ['Procurement documents', [['est_value', 'number'], ['currency', 'list', ['GBP', 'USD', 'EUR', 'SDG']], ['value_gbp', 'number'], ['supplier', 'text'], ['po_ref', 'text'], ['grn_ref', 'text'], ['invoice_ref', 'text']]],
+  ];
+  let draft = null, isNew = false;
+  function closeDrawer() { $('#drawer-root').replaceChildren(); state.selected = null; draft = null; renderTable(); }
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.selected) closeDrawer(); });
+  function nextPrNumber() { const nums = state.rows.map((r) => Number(r.n) || 0); const n = (nums.length ? Math.max(...nums) : 0) + 1; return { n, pr: 'PR-' + String(n).padStart(3, '0') }; }
+  $('#b-new').onclick = () => { const { n, pr } = nextPrNumber(); isNew = true; draft = { n, pr, stage: 'NOT INITIATED', pct: 0, open_date: '', closure_date: '', family: '', item: '', priority: '', validated: '', responsible: '', next_action: '', action_due: '', remarks: '', est_value: null, currency: '', value_gbp: null, supplier: '', po_ref: '', grn_ref: '', invoice_ref: '' }; state.selected = '__new'; buildDrawer(); };
+  function openDrawer(id) {
+    const r = state.work.get(id); if (!r) return;
+    isNew = false; state.selected = id; draft = { ...r }; buildDrawer(); renderTable();
+  }
+  function buildDrawer() {
+    const root = $('#drawer-root'); root.replaceChildren();
+    const scrim = el('div', 'scrim'); scrim.onclick = closeDrawer;
+    const d = el('aside', 'drawer'); d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', (state.canWrite ? 'Edit ' : 'View ') + draft.pr);
+    const h = el('div', 'dh'); const hl = el('div'); hl.append(el('h3', '', isNew ? 'New PR' : draft.pr), el('div', 'sub', isNew ? 'Adds ' + draft.pr + ' to the register' : [draft.item, draft.family].filter(Boolean).join(' · ') || 'No item recorded'));
+    const x = el('button', 'btn sm x', 'Close'); x.type = 'button'; x.onclick = closeDrawer; h.append(hl, x);
+    const body = el('div', 'db');
+    const calc = el('div', 'calc'); calc.id = 'dcalc'; body.append(calc);
+    const dx = el('ul', 'dx'); dx.id = 'dexc'; body.append(dx);
+    if (state.canWrite && !isNew) {
+      const q = el('div', 'quick');
+      const mk = (label, patch) => { const b = el('button', 'btn sm', label); b.type = 'button'; b.onclick = () => { Object.assign(draft, typeof patch === 'function' ? patch() : patch); fillForm(); updateDerived(); }; q.append(b); };
+      mk('Mark closed today', () => ({ stage: 'CLOSE', closure_date: todayStr(), pct: 1 }));
+      mk('Set open (today)', () => ({ stage: 'OPEN', open_date: draft.open_date || todayStr() }));
+      mk('100%', { pct: 1 });
+      body.append(q);
+    }
+    FORM.forEach(([leg, fields]) => {
+      const fs = el('fieldset'); fs.append(el('legend', '', leg));
+      fields.forEach(([k, type, opts, full]) => {
+        const w = el('div', 'fld' + (full || type === 'area' ? ' full' : '')); w.dataset.k = k;
+        const id = 'fld-' + k; const lab = el('label', '', FIELD_LABEL[k] + (k === 'value_gbp' ? ' (£)' : '')); lab.htmlFor = id; w.append(lab);
+        let input;
+        if (type === 'select') { input = el('select'); opts.forEach((o) => input.append(new Option(o || '—', o))); }
+        else if (type === 'area') input = el('textarea');
+        else if (type === 'pct') { const row = el('div', 'pctrow'); const rg = el('input'); rg.type = 'range'; rg.min = 0; rg.max = 100; rg.step = 5; rg.id = 'fld-pct-r'; rg.setAttribute('aria-label', '% complete slider'); input = el('input'); input.type = 'number'; input.min = 0; input.max = 100; input.step = 1; rg.addEventListener('input', () => { input.value = rg.value; input.dispatchEvent(new Event('input')); }); rg.disabled = !state.canWrite; row.append(rg, input); w.append(row); }
+        else { input = el('input'); input.type = type === 'list' ? 'text' : type; if (type === 'number') input.step = 'any'; if (type === 'list') { const dl = el('datalist'); dl.id = 'dl-' + k; opts.forEach((o) => dl.append(new Option(o))); w.append(dl); input.setAttribute('list', dl.id); } }
+        input.id = id; if (type !== 'pct') w.append(input);
+        if (!state.canWrite || (k === 'pr' && !isNew)) input.disabled = true;
+        const onEdit = () => { draft[k] = readField(k, type, input); if (type === 'pct') { const rg = w.querySelector('input[type=range]'); rg.value = input.value; } markChanged(); updateDerived(); };
+        input.addEventListener('input', onEdit); input.addEventListener('change', onEdit);
+        fs.append(w);
+      });
+      body.append(fs);
+    });
+    if (!isNew) { const hist = el('div'); hist.append(el('legend', '', 'History of this PR')); const hl2 = el('div', 'log'); hl2.id = 'dhist'; hist.append(hl2); body.append(hist); }
+    const foot = el('div', 'df');
+    const info = el('span', 'note sp'); info.id = 'dinfo';
+    const cancel = el('button', 'btn', state.canWrite ? 'Cancel' : 'Close'); cancel.type = 'button'; cancel.onclick = closeDrawer;
+    foot.append(info, cancel);
+    if (state.canWrite) { const save = el('button', 'btn primary', isNew ? 'Add PR' : 'Apply changes'); save.type = 'button'; save.id = 'dsave'; save.onclick = doSave; foot.append(save); }
+    d.append(h, body, foot); root.append(scrim, d);
+    fillForm(); updateDerived(); renderDrawerHistory();
+    setTimeout(() => (state.canWrite ? (isNew ? $('#fld-family') : $('#fld-stage')) : x)?.focus(), 50);
+  }
+  function readField(k, type, input) {
+    if (type === 'pct') { const v = Math.max(0, Math.min(100, Number(input.value) || 0)); return Math.round(v * 10) / 1000; }
+    if (type === 'number') return input.value === '' ? null : Number(input.value);
+    return (k === 'remarks' || k === 'next_action') ? input.value : input.value.trim();
+  }
+  function fillForm() {
+    FORM.forEach(([, fields]) => fields.forEach(([k, type]) => {
+      const input = $('#fld-' + k); if (!input) return;
+      if (type === 'pct') { const v = Math.round((draft.pct || 0) * 1000) / 10; input.value = v; $('#fld-pct-r').value = v; }
+      else if (type === 'select') { const v = draft[k] ?? ''; if (![...input.options].some((o) => o.value === v)) input.append(new Option(v, v)); input.value = v; }
+      else input.value = draft[k] ?? '';
+    }));
+    markChanged();
+  }
+  function changedKeys() {
+    if (isNew) return [];
+    const base = state.work.get(state.selected) || {};
+    return Object.keys(FIELD_LABEL).filter((k) => k !== 'n' && !same(base[k], draft[k]));
+  }
+  function markChanged() {
+    const ch = new Set(changedKeys());
+    $$('.drawer .fld').forEach((w) => w.classList.toggle('chg', ch.has(w.dataset.k)));
+    const info = $('#dinfo'); if (info) info.textContent = !state.canWrite ? 'View only' : isNew ? '' : ch.size ? ch.size + ' field' + (ch.size > 1 ? 's' : '') + ' edited' : 'No changes';
+  }
+  function updateDerived() {
+    const today = todayStr(); const r = CORE.derive({ ...draft }, today);
+    const ex = CORE.exceptions([r], today);
+    const c = $('#dcalc'); if (!c) return;
+    const cell = (l, v, col) => { const d = el('div'); const b = el('b', '', v); if (col) b.style.color = col; d.append(el('span', '', l), b); return d; };
+    const rc = { CRITICAL: 'var(--bad)', HIGH: 'var(--warn)', MEDIUM: 'var(--accent)' };
+    c.replaceChildren(cell('Risk flag', r.risk === '-' ? '–' : r.risk, rc[r.risk]), cell(r.stage === 'CLOSE' ? 'Days to close' : 'Days open', r.days == null ? 'n/a' : String(r.days)), cell('Aging', r.aging === '-' ? '–' : r.aging),
+      cell('Procurement tier', r.tierInfo ? 'Tier ' + r.tier : 'Value needed'), cell('Method', r.tierInfo ? r.tierInfo.method + ' · ' + r.tierInfo.quotes : '–'));
+    $('#dexc').replaceChildren(...(ex.length ? ex.map((e) => el('li', e.category === 'Close-out compliance' ? 'c' : '', e.check + ' — ' + e.evidence)) : [el('li', 'ok', 'No exceptions for this PR with the values shown.')]));
+  }
+  function renderDrawerHistory() {
+    const box = $('#dhist'); if (!box || isNew) return;
+    const pr = draft && draft.pr;
+    const items = state.pending.filter((l) => l.pr === pr).reverse().map((e) => ({ ...e, _pending: true })).concat((BASE.log || []).filter((l) => l.pr === pr));
+    if (!items.length) { box.replaceChildren(el('div', 'note', 'No edits recorded since import.')); return; }
+    const ids = [...new Set(items.map((l) => l.by).filter(Boolean))];
+    (user && ids.length ? user.profiles(ids) : Promise.resolve({})).then((ps) => box.replaceChildren(...items.slice(0, 20).map((l) => logItem(l, ps))));
+  }
+  function doSave() {
+    if (!state.canWrite || !draft) return;
+    const clean = {}; Object.keys(FIELD_LABEL).forEach((k) => { if (k in draft) clean[k] = draft[k] === undefined ? null : draft[k]; });
+    if (isNew) {
+      const id = String(clean.pr || '').trim();
+      if (!/^[A-Za-z0-9_\-.]{1,60}$/.test(id)) { toast('PR number may use letters, digits, "-" and "." only.', { err: true }); return; }
+      if (state.work.has(id)) { toast(id + ' already exists. Use another number.', { err: true }); return; }
+      const m = id.match(/(\d+)$/); clean.n = m ? Number(m[1]) : nextPrNumber().n; clean.pr = id;
+      addCreate(clean); closeDrawer(); return;
+    }
+    const keys = changedKeys(); if (!keys.length) { closeDrawer(); return; }
+    const patch = {}; keys.forEach((k) => { patch[k] = normalize(clean[k]); });
+    const pr = state.selected; closeDrawer(); addChange(pr, patch);
+  }
+
+  /* ---------- exports ---------- */
+  $('#b-export').onclick = async () => {
+    const cols = ['n', 'pr', 'family', 'item', 'priority', 'validated', 'stage', 'open_date', 'closure_date', 'pct', 'days', 'aging', 'risk', 'responsible', 'next_action', 'action_due', 'remarks', 'est_value', 'currency', 'value_gbp', 'tier', 'supplier', 'po_ref', 'grn_ref', 'invoice_ref', 'nexc'];
+    const head = ['N', 'PR N.', 'FAMILY', 'ITEM', 'PRIORITY', 'VALIDATED', 'STAGE', 'OPEN DATE', 'CLOSURE DATE', '% COMPLETE', 'DAYS', 'AGING', 'RISK FLAG', 'RESPONSIBLE', 'NEXT ACTION', 'ACTION DUE', 'REMARKS', 'EST. VALUE', 'CURRENCY', 'VALUE GBP', 'TIER', 'SUPPLIER', 'PO REF', 'GRN REF', 'INVOICE REF', 'EXCEPTIONS'];
+    const esc = (v) => { if (v == null) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const rows = state.rows.slice().sort((a, b) => a.n - b.n).map((r) => cols.map((c) => esc(c === 'pct' ? Math.round(r.pct * 1000) / 10 + '%' : c === 'risk' && r.risk === '-' ? '' : c === 'aging' && r.aging === '-' ? '' : r[c])).join(','));
+    const exc = ['', 'EXCEPTIONS', 'PR,CATEGORY,CHECK,EVIDENCE', ...state.exc.map((e) => [e.pr, e.category, e.check, e.evidence].map(esc).join(','))];
+    try { await saveFile('Sudan_PR_Register_' + todayStr() + '.csv', '\ufeff' + [head.join(','), ...rows, ...exc].join('\r\n'), 'text/csv'); toast('Export saved'); }
+    catch (e) { if (e && e.code !== 'declined') toast('Export is not available here.', { err: true }); }
+  };
+  $('#b-html').onclick = async () => {
+    const snap = { ...BASE };
+    if (state.pending.length) toast('The downloaded page contains saved data only. Save first to include your unsaved changes.');
+    try { await saveFile('Sudan_PR_Tracker_' + todayStr() + '.html', buildDocument(snap, true), 'text/html'); toast('Web page saved. It opens in any browser.'); }
+    catch (e) { if (e && e.code !== 'declined') toast('Download is not available here.', { err: true }); }
+  };
+
+  /* ---------- start ---------- */
+  setSync(C ? 'live' : '', state.canWrite ? 'Editing' : 'Published data');
+  if (!C) setSync('live', 'Web version');
+  if (restoredNote && !OFFLINE) { const b = $('#banner'); b.hidden = false; b.textContent = restoredNote; }
+  renderSource(); recompute(); syncFilterInputs(); showTab(state.tab); render();
+  if (OFFLINE && state.canWrite) enterOfflineEdit();
+})();
+</script></body></html>
