@@ -198,6 +198,40 @@ body.has-savebar main.inner { padding-bottom: 110px; }
 .ro { font-size: 12px; color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; white-space: nowrap; }
 .log .ev.pending .when { color: var(--warn); font-weight: 600; }
 .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+
+/* vendor module */
+.drawer.wide { width: min(760px, 100%); }
+.vsec { display: flex; flex-direction: column; gap: 8px; }
+.vsec h4 { margin: 0; font-size: 11px; font-family: var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); font-weight: 500; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.vsec h4 b { font-family: var(--f-body); text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--ink); font-weight: 600; }
+.ddrow { display: grid; grid-template-columns: 54px 1fr auto; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.ddrow .ref { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.ddrow .q { font-size: 13px; } .ddrow .q small { display: block; font-size: 11px; color: var(--muted); }
+.ddrow .q .crit { color: var(--bad); font-size: 10px; font-weight: 600; letter-spacing: .04em; margin-left: 4px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; flex: none; }
+.seg button { border: 0; background: var(--panel); padding: 4px 9px; font-size: 12px; cursor: pointer; border-left: 1px solid var(--line); color: var(--muted); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"].y { background: var(--ok-bg); color: var(--ok); font-weight: 600; }
+.seg button[aria-pressed="true"].n { background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+.seg button[aria-pressed="true"].x { background: var(--track); color: var(--ink); font-weight: 600; }
+.seg button[disabled] { cursor: default; }
+.docrow { display: grid; grid-template-columns: 58px 1fr 120px 130px 130px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.docrow .ref { font-family: var(--f-mono); font-size: 11px; color: var(--muted); }
+.docrow.req .ref { color: var(--accent); font-weight: 600; }
+.docrow select, .docrow input { width: 100%; padding: 4px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); font-size: 12px; }
+.docrow .tag { font-size: 10px; font-weight: 600; letter-spacing: .04em; }
+.docrow .tag.req { color: var(--accent); } .docrow .tag.opt { color: var(--muted); }
+.docrow.bad { background: var(--bad-bg); } .docrow.warn { background: var(--warn-bg); }
+.evtable td, .evtable th { position: static; font-size: 12px; }
+.evform { border: 1px dashed var(--line); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.evgrid { display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; align-items: center; font-size: 12px; }
+.evgrid select { padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel); font-size: 12px; }
+.warnbox { font-size: 12px; border-left: 3px solid var(--warn); background: var(--warn-bg); padding: 6px 10px; border-radius: 0 6px 6px 0; }
+.score-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.score-pill i { display: inline-block; width: 40px; height: 6px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.score-pill i s { display: block; height: 100%; text-decoration: none; }
+.st-Approved { color: var(--ok); } .st-Suspended { color: var(--bad); } .st-Inactive { color: var(--muted); } .st-New, .st-Under { color: var(--accent); }
+@media (max-width: 640px) { .docrow { grid-template-columns: 50px 1fr; } .docrow > :nth-child(n+3) { grid-column: 2; } .ddrow { grid-template-columns: 44px 1fr; } .ddrow .seg { grid-column: 2; justify-self: start; } }
 </style>
 <template id="shell"><header class="bar gut">
   <div class="inner">
@@ -230,6 +264,7 @@ body.has-savebar main.inner { padding-bottom: 110px; }
 
   <nav class="tabs" role="tablist">
     <button class="tab" role="tab" id="t-reg" aria-selected="true" data-p="reg">Register <span class="cnt" id="n-reg">0</span></button>
+    <button class="tab" role="tab" id="t-ven" aria-selected="false" data-p="ven">Vendors <span class="cnt" id="n-ven">0</span></button>
     <button class="tab" role="tab" id="t-exc" aria-selected="false" data-p="exc">Exceptions <span class="cnt" id="n-exc">0</span></button>
     <button class="tab" role="tab" id="t-log" aria-selected="false" data-p="log">Activity log</button>
     <button class="tab" role="tab" id="t-met" aria-selected="false" data-p="met">Method &amp; notes</button>
@@ -269,10 +304,42 @@ body.has-savebar main.inner { padding-bottom: 110px; }
     </div>
   </section>
 
+  <section class="pane" id="p-ven" hidden>
+    <p class="note">Vendor register with UK-Med / OCHA due diligence (Yes / No / N/A, scored automatically), required documents with expiry dates, and performance evaluations. Required documents depend on the vendor type and the highest procurement tier of the PRs linked to it. Click a vendor to open its file.</p>
+    <div class="kpis" id="vkpis"></div>
+    <div class="filters">
+      <input type="search" id="v-q" placeholder="Search vendor, ID, category, city…" aria-label="Search vendors">
+      <select id="v-status" aria-label="Vendor status"><option value="">All statuses</option><option>New</option><option>Under Verification</option><option>Approved</option><option>Suspended</option><option>Inactive</option></select>
+      <select id="v-flag" aria-label="Vendor filter"><option value="">All vendors</option><option value="ddopen">Due diligence not passed</option><option value="docs">Missing / expired documents</option><option value="noscreen">Not screened (UN list)</option><option value="poor">Poor performance</option></select>
+      <button class="btn sm" id="v-export" type="button" hidden>Export vendors CSV</button>
+      <button class="btn sm primary" id="v-new" type="button" hidden>+ New vendor</button>
+      <span class="count" id="v-count"></span>
+    </div>
+    <div class="tbl-wrap">
+      <table id="vend">
+        <thead><tr>
+          <th></th>
+          <th><button type="button" data-k="id">Vendor ID</button></th>
+          <th><button type="button" data-k="name">Name</button></th>
+          <th class="hide-sm"><button type="button" data-k="vtype">Type</button></th>
+          <th class="hide-sm"><button type="button" data-k="category">Category</button></th>
+          <th><button type="button" data-k="status">Status</button></th>
+          <th><button type="button" data-k="ddScore">Due diligence</button></th>
+          <th><button type="button" data-k="docMissing">Documents</button></th>
+          <th class="hide-sm"><button type="button" data-k="screen">UN screening</button></th>
+          <th class="num"><button type="button" data-k="perf">Performance</button></th>
+          <th class="num"><button type="button" data-k="nprs">PRs</button></th>
+          <th class="num"><button type="button" data-k="nexc">Flags</button></th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
   <section class="pane" id="p-exc" hidden>
-    <p class="note">Rules checked live against every PR. <b>Close-out compliance</b>: marked closed while a GRN, payment or PO is outstanding (a PR closes only when receipt and financial documents are complete). <b>Status</b>: stage does not match the other fields. <b>Follow-up</b>: overdue next action. <b>Data quality</b>: dates or fields inconsistent or missing. Click a row to fix it.</p>
+    <p class="note">Rules checked live against every PR. <b>Close-out compliance</b>: marked closed while a GRN, payment or PO is outstanding (a PR closes only when receipt and financial documents are complete). <b>Vendor compliance</b>: supplier not registered, not screened, due diligence or documents missing. <b>Status</b>: stage does not match the other fields. <b>Follow-up</b>: overdue next action, expiring documents, missing performance evaluations. <b>Data quality</b>: dates or fields inconsistent or missing. Click a row to fix it.</p>
     <div class="xgroups" id="xgroups"></div>
-    <div class="tbl-wrap"><table id="exc"><thead><tr><th>PR</th><th>Category</th><th>Check</th><th>Evidence in the register</th><th></th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap"><table id="exc"><thead><tr><th>PR / vendor</th><th>Category</th><th>Check</th><th>Evidence in the register</th><th></th></tr></thead><tbody></tbody></table></div>
   </section>
 
   <section class="pane" id="p-log" hidden>
@@ -290,6 +357,11 @@ body.has-savebar main.inner { padding-bottom: 110px; }
         <tr><td>Avg % complete</td><td>Mean % complete of initiated PRs (OPEN + CLOSE).</td></tr>
         <tr><td>Procurement tier</td><td>From value in GBP (or the GBP equivalent field): Tier 1 £0–500 invoice only · Tier 2 £501–2,500 PO + 1 quote · Tier 3 £2,501–25,000 3 quotes · Tier 4 £25,001–100,000 enhanced 3 quotes · Tier 5 £100,001+ tender. Blank until a value is entered.</td></tr>
       </tbody></table></div>
+    </div>
+    <div class="card" id="vreq">
+      <h2>Vendor requirements and their sources</h2>
+      <p class="note">Every due-diligence question, required document and evaluation criterion on this board, with the document it comes from. OCHA sources: Sudan Humanitarian Fund Operational Manual (partner declarations of non-support for UN designated entities and of conflict of interest), OCHA CBPF Partner Guidance Note on Fraud and Financial Misconduct (2021), UN Security Council Consolidated List (main.un.org/securitycouncil/en/content/un-sc-consolidated-list). Rules marked "board rule" are working conventions of this board, not policy: change them if UK-Med Finance or Procurement set different ones.</p>
+      <div class="tbl-wrap" style="max-height:none"><table class="mtable" id="vreq-t"><thead><tr><th>Ref</th><th>Requirement</th><th>Applies</th><th>Source</th></tr></thead><tbody></tbody></table></div>
     </div>
     <div class="card">
       <h2>Notes on the source workbook (as imported on 20/10/2026)</h2>
@@ -318,7 +390,7 @@ body.has-savebar main.inner { padding-bottom: 110px; }
 </div>
 </template>
 <div id="mount"></div>
-<script type="application/json" id="state">{"rev":1,"saveId":null,"savedAt":null,"savedBy":null,"source":{"file":"MR Follow up Dashboard 4.xls","sheet":"PR Register","register_date":"2026-10-19","rows":58,"imported_on":"2026-10-20"},"prs":[{"closure_date":"2026-10-04","family":"Logistics","item":"Kitchen","n":1,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-001","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-14","family":"Logistics","item":"GEN Oil","n":2,"next_action":"","open_date":"2026-10-29","pct":1,"pr":"PR-002","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":3,"next_action":"","open_date":"2026-09-29","pct":0.85,"pr":"PR-003","priority":"HIGH","remarks":"Missing: CBA, sign the contract","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"MERU-CLIN","n":4,"next_action":"","open_date":"2026-09-26","pct":1,"pr":"PR-004","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"GH-OFFICE","n":5,"next_action":"","open_date":"2026-09-29","pct":1,"pr":"PR-005","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-12","family":"Others","item":"Cable","n":6,"next_action":"","open_date":"2026-10-30","pct":1,"pr":"PR-006","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-12","family":"Logistics","item":"Electrical","n":7,"next_action":"","open_date":"2026-09-30","pct":1,"pr":"PR-007","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Spare-parts","n":8,"next_action":"","open_date":"2026-10-13","pct":0.85,"pr":"PR-008","priority":"MEDIUM","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-05","family":"Logistics","item":"Wifi","n":9,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-009","priority":"HIGH","remarks":"Ok","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Drinking-water","n":10,"next_action":"","open_date":"2026-10-03","pct":1,"pr":"PR-010","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Office","n":11,"next_action":"","open_date":"2026-10-12","pct":0.5,"pr":"PR-011","priority":"HIGH","remarks":"Waiting for PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":12,"next_action":"","open_date":"","pct":1,"pr":"PR-012","priority":"MEDIUM","remarks":"CANCEL","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Construction","n":13,"next_action":"","open_date":"2026-10-04","pct":1,"pr":"PR-013","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Fuel","item":"Diesel","n":14,"next_action":"","open_date":"2026-10-30","pct":0.95,"pr":"PR-014","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-06","family":"Fuel","item":"Diesel","n":15,"next_action":"","open_date":"2026-10-06","pct":1,"pr":"PR-015","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-07","family":"Logistics","item":"Logo - Office","n":16,"next_action":"","open_date":"2026-10-01","pct":1,"pr":"PR-016","priority":"MEDIUM","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Repairs","n":17,"next_action":"","open_date":"2026-10-06","pct":0.9,"pr":"PR-017","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":18,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-018","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":19,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-019","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Rooms-items","n":20,"next_action":"","open_date":"2026-10-07","pct":0.2,"pr":"PR-020","priority":"MEDIUM","remarks":"Missing: everything","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Mix-Chad","n":21,"next_action":"","open_date":"2026-10-07","pct":0.5,"pr":"PR-021","priority":"HIGH","remarks":"Only received two of 4","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":22,"next_action":"","open_date":"2026-10-07","pct":1,"pr":"PR-022","priority":"HIGH","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Logo - Office","n":23,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-023","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-13","family":"Logistics","item":"GH-Office","n":24,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-024","priority":"LOW","remarks":"Need to be paid","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Other","n":25,"next_action":"","open_date":"2026-10-12","pct":0.95,"pr":"PR-025","priority":"MEDIUM","remarks":"Need to be paid","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":26,"next_action":"","open_date":"2026-10-12","pct":0.15,"pr":"PR-026","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":27,"next_action":"","open_date":"2026-10-10","pct":0.95,"pr":"PR-027","priority":"LOW","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":28,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-028","priority":"LOW","remarks":"External logo","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":29,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-029","priority":"MEDIUM","remarks":"Ambulance rental (2)","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":30,"next_action":"Use the PR","open_date":"","pct":0,"pr":"PR-030","priority":"","remarks":"CANCEL","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"2026-10-15","family":"Logistics","item":"MERU-CLIN","n":31,"next_action":"","open_date":"2026-10-14","pct":0.95,"pr":"PR-031","priority":"MEDIUM","remarks":"Ceiling fan","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":32,"next_action":"","open_date":"2026-10-01","pct":0.85,"pr":"PR-032","priority":"HIGH","remarks":"Construction and repairs","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":33,"next_action":"","open_date":"2026-10-18","pct":0.85,"pr":"PR-033","priority":"MEDIUM","remarks":"GH-Office partitions","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":34,"next_action":"","open_date":"","pct":0,"pr":"PR-034","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":35,"next_action":"","open_date":"","pct":0,"pr":"PR-035","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":36,"next_action":"","open_date":"","pct":0,"pr":"PR-036","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":37,"next_action":"","open_date":"","pct":0,"pr":"PR-037","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":38,"next_action":"","open_date":"","pct":0,"pr":"PR-038","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":39,"next_action":"","open_date":"","pct":0,"pr":"PR-039","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":40,"next_action":"","open_date":"","pct":0,"pr":"PR-040","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":41,"next_action":"","open_date":"","pct":0,"pr":"PR-041","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":42,"next_action":"","open_date":"","pct":0,"pr":"PR-042","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":43,"next_action":"","open_date":"","pct":0,"pr":"PR-043","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":44,"next_action":"","open_date":"","pct":0,"pr":"PR-044","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":45,"next_action":"","open_date":"","pct":0,"pr":"PR-045","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":46,"next_action":"","open_date":"","pct":0,"pr":"PR-046","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":47,"next_action":"","open_date":"","pct":0,"pr":"PR-047","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":48,"next_action":"","open_date":"","pct":0,"pr":"PR-048","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":49,"next_action":"","open_date":"","pct":0,"pr":"PR-049","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":50,"next_action":"","open_date":"","pct":0,"pr":"PR-050","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":51,"next_action":"","open_date":"","pct":0,"pr":"PR-051","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":52,"next_action":"","open_date":"","pct":0,"pr":"PR-052","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":53,"next_action":"","open_date":"","pct":0,"pr":"PR-053","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":54,"next_action":"","open_date":"","pct":0,"pr":"PR-054","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":55,"next_action":"","open_date":"","pct":0,"pr":"PR-055","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":56,"next_action":"","open_date":"","pct":0,"pr":"PR-056","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":57,"next_action":"","open_date":"","pct":0,"pr":"PR-057","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":58,"next_action":"","open_date":"","pct":0,"pr":"PR-058","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""}],"log":[]}</script>
+<script type="application/json" id="state">{"rev":1,"saveId":null,"savedAt":null,"savedBy":null,"source":{"file":"MR Follow up Dashboard 4.xls","sheet":"PR Register","register_date":"2026-10-19","rows":58,"imported_on":"2026-10-20"},"prs":[{"closure_date":"2026-10-04","family":"Logistics","item":"Kitchen","n":1,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-001","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-14","family":"Logistics","item":"GEN Oil","n":2,"next_action":"","open_date":"2026-10-29","pct":1,"pr":"PR-002","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":3,"next_action":"","open_date":"2026-09-29","pct":0.85,"pr":"PR-003","priority":"HIGH","remarks":"Missing: CBA, sign the contract","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"MERU-CLIN","n":4,"next_action":"","open_date":"2026-09-26","pct":1,"pr":"PR-004","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Rent","item":"GH-OFFICE","n":5,"next_action":"","open_date":"2026-09-29","pct":1,"pr":"PR-005","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-12","family":"Others","item":"Cable","n":6,"next_action":"","open_date":"2026-10-30","pct":1,"pr":"PR-006","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-12","family":"Logistics","item":"Electrical","n":7,"next_action":"","open_date":"2026-09-30","pct":1,"pr":"PR-007","priority":"LOW","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Spare-parts","n":8,"next_action":"","open_date":"2026-10-13","pct":0.85,"pr":"PR-008","priority":"MEDIUM","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-05","family":"Logistics","item":"Wifi","n":9,"next_action":"","open_date":"2026-09-28","pct":1,"pr":"PR-009","priority":"HIGH","remarks":"Ok","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Drinking-water","n":10,"next_action":"","open_date":"2026-10-03","pct":1,"pr":"PR-010","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Office","n":11,"next_action":"","open_date":"2026-10-12","pct":0.5,"pr":"PR-011","priority":"HIGH","remarks":"Waiting for PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":12,"next_action":"","open_date":"","pct":1,"pr":"PR-012","priority":"MEDIUM","remarks":"CANCEL","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Construction","n":13,"next_action":"","open_date":"2026-10-04","pct":1,"pr":"PR-013","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Fuel","item":"Diesel","n":14,"next_action":"","open_date":"2026-10-30","pct":0.95,"pr":"PR-014","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-06","family":"Fuel","item":"Diesel","n":15,"next_action":"","open_date":"2026-10-06","pct":1,"pr":"PR-015","priority":"MEDIUM","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-07","family":"Logistics","item":"Logo - Office","n":16,"next_action":"","open_date":"2026-10-01","pct":1,"pr":"PR-016","priority":"MEDIUM","remarks":"Missing: GRN,","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Repairs","n":17,"next_action":"","open_date":"2026-10-06","pct":0.9,"pr":"PR-017","priority":"HIGH","remarks":"Waiting for payment","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":18,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-018","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":19,"next_action":"","open_date":"2026-10-07","pct":0.4,"pr":"PR-019","priority":"HIGH","remarks":"Waiting for good to arrive","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Rooms-items","n":20,"next_action":"","open_date":"2026-10-07","pct":0.2,"pr":"PR-020","priority":"MEDIUM","remarks":"Missing: everything","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-17","family":"Logistics","item":"Mix-Chad","n":21,"next_action":"","open_date":"2026-10-07","pct":0.5,"pr":"PR-021","priority":"HIGH","remarks":"Only received two of 4","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Mix-Chad","n":22,"next_action":"","open_date":"2026-10-07","pct":1,"pr":"PR-022","priority":"HIGH","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Logo - Office","n":23,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-023","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"2026-10-13","family":"Logistics","item":"GH-Office","n":24,"next_action":"","open_date":"2026-10-11","pct":1,"pr":"PR-024","priority":"LOW","remarks":"Need to be paid","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"Other","n":25,"next_action":"","open_date":"2026-10-12","pct":0.95,"pr":"PR-025","priority":"MEDIUM","remarks":"Need to be paid","responsible":"Procurement off","stage":"CLOSE","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":26,"next_action":"","open_date":"2026-10-12","pct":0.15,"pr":"PR-026","priority":"MEDIUM","remarks":"","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":27,"next_action":"","open_date":"2026-10-10","pct":0.95,"pr":"PR-027","priority":"LOW","remarks":"Annual PR","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":28,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-028","priority":"LOW","remarks":"External logo","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Lease","item":"Vehicle","n":29,"next_action":"","open_date":"2026-09-27","pct":0.5,"pr":"PR-029","priority":"MEDIUM","remarks":"Ambulance rental (2)","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":30,"next_action":"Use the PR","open_date":"","pct":0,"pr":"PR-030","priority":"","remarks":"CANCEL","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"2026-10-15","family":"Logistics","item":"MERU-CLIN","n":31,"next_action":"","open_date":"2026-10-14","pct":0.95,"pr":"PR-031","priority":"MEDIUM","remarks":"Ceiling fan","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"MERU-CLIN","n":32,"next_action":"","open_date":"2026-10-01","pct":0.85,"pr":"PR-032","priority":"HIGH","remarks":"Construction and repairs","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"GH-OFFICE","n":33,"next_action":"","open_date":"2026-10-18","pct":0.85,"pr":"PR-033","priority":"MEDIUM","remarks":"GH-Office partitions","responsible":"Procurement off","stage":"OPEN","validated":"Yes"},{"closure_date":"","family":"Logistics","item":"","n":34,"next_action":"","open_date":"","pct":0,"pr":"PR-034","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":35,"next_action":"","open_date":"","pct":0,"pr":"PR-035","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":36,"next_action":"","open_date":"","pct":0,"pr":"PR-036","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":37,"next_action":"","open_date":"","pct":0,"pr":"PR-037","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"Logistics","item":"","n":38,"next_action":"","open_date":"","pct":0,"pr":"PR-038","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":39,"next_action":"","open_date":"","pct":0,"pr":"PR-039","priority":"","remarks":"","responsible":"Procurement off","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":40,"next_action":"","open_date":"","pct":0,"pr":"PR-040","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":41,"next_action":"","open_date":"","pct":0,"pr":"PR-041","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":42,"next_action":"","open_date":"","pct":0,"pr":"PR-042","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":43,"next_action":"","open_date":"","pct":0,"pr":"PR-043","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":44,"next_action":"","open_date":"","pct":0,"pr":"PR-044","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":45,"next_action":"","open_date":"","pct":0,"pr":"PR-045","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":46,"next_action":"","open_date":"","pct":0,"pr":"PR-046","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":47,"next_action":"","open_date":"","pct":0,"pr":"PR-047","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":48,"next_action":"","open_date":"","pct":0,"pr":"PR-048","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":49,"next_action":"","open_date":"","pct":0,"pr":"PR-049","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":50,"next_action":"","open_date":"","pct":0,"pr":"PR-050","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":51,"next_action":"","open_date":"","pct":0,"pr":"PR-051","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":52,"next_action":"","open_date":"","pct":0,"pr":"PR-052","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":53,"next_action":"","open_date":"","pct":0,"pr":"PR-053","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":54,"next_action":"","open_date":"","pct":0,"pr":"PR-054","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":55,"next_action":"","open_date":"","pct":0,"pr":"PR-055","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":56,"next_action":"","open_date":"","pct":0,"pr":"PR-056","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":57,"next_action":"","open_date":"","pct":0,"pr":"PR-057","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""},{"closure_date":"","family":"","item":"","n":58,"next_action":"","open_date":"","pct":0,"pr":"PR-058","priority":"","remarks":"","responsible":"","stage":"NOT INITIATED","validated":""}],"log":[],"vendors":[]}</script>
 <script id="core">/* ===== CORE (pure functions, no DOM) ===== */
 const CORE = (() => {
   const TIERS = [
@@ -372,7 +444,7 @@ const CORE = (() => {
       if (isNum(r.est_value) && !r.currency) add(r, 'Data quality', 'Value without currency', 'Value ' + r.est_value + '; currency blank');
       if (isNum(r.est_value) && r.currency && String(r.currency).toUpperCase() !== 'GBP' && !isNum(r.value_gbp)) add(r, 'Data quality', 'No GBP equivalent: tier cannot be set', 'Value ' + r.est_value + ' ' + r.currency + '; GBP equivalent blank');
     }
-    const ord = { 'Close-out compliance': 0, Status: 1, 'Follow-up': 2, 'Data quality': 3 };
+    const ord = { 'Close-out compliance': 0, 'Vendor compliance': 1, Status: 2, 'Follow-up': 3, 'Data quality': 4 };
     return out.sort((a, b) => ord[a.category] - ord[b.category] || a.check.localeCompare(b.check) || a.pr.localeCompare(b.pr));
   }
   function kpis(rows, exc, today) {
@@ -393,7 +465,118 @@ const CORE = (() => {
       comp_prs: new Set(exc.filter((e) => e.category === 'Close-out compliance').map((e) => e.pr)).size,
     };
   }
-  return { derive, exceptions, kpis, TIERS };
+  /* ---------- VENDORS: due diligence, documents, performance ---------- */
+  const SRC_POL = 'UK-Med Procurement Policy V3';
+  const DD_ITEMS = [
+    { id: 'DD-01', text: 'Not engaged in corrupt, fraudulent, collusive or coercive practices', crit: true, src: SRC_POL + ' §2.12(a); OCHA Partner Guidance Note on Fraud (2021)' },
+    { id: 'DD-02', text: 'Not bankrupt, wound up, under court administration or in an arrangement with creditors', crit: false, src: SRC_POL + ' §2.12(b)' },
+    { id: 'DD-03', text: 'No conviction for an offence concerning professional conduct', crit: false, src: SRC_POL + ' §2.12(c)' },
+    { id: 'DD-04', text: 'No grave professional misconduct', crit: false, src: SRC_POL + ' §2.12(d)' },
+    { id: 'DD-05', text: 'Social security and tax obligations fulfilled', crit: false, src: SRC_POL + ' §2.12(e)' },
+    { id: 'DD-06', text: 'No final judgment for fraud, corruption, criminal organisation or other illegal activity', crit: true, src: SRC_POL + ' §2.12(f)' },
+    { id: 'DD-07', text: 'No child labour, environmental damage, modern slavery or other unacceptable practices', crit: true, src: SRC_POL + ' §2.12(h)' },
+    { id: 'DD-08', text: 'Screened against the UN Security Council Consolidated List — no match', crit: true, src: 'OCHA SHF Operational Manual §5.1.2.1 (Declaration of non-support for a UN designated entity); UN SC 1591 Sudan sanctions' },
+    { id: 'DD-09', text: 'No conflict of interest with UK-Med staff (declared and checked)', crit: true, src: SRC_POL + ' §7; OCHA SHF Operational Manual §5.1.2.1 (Declaration of conflict of interest)' },
+    { id: 'DD-10', text: 'UK-Med Supplier Code of Conduct acknowledged', crit: false, src: SRC_POL + ' §9' },
+    { id: 'DD-11', text: 'Supplier Due Diligence Form completed (required Tier 3 and above)', crit: false, src: SRC_POL + ' §3 tier table' },
+    { id: 'DD-12', text: 'Refinitiv check completed (required Tier 5; may be done at any value in high-risk contexts)', crit: false, src: SRC_POL + ' §3 tier table and footnote 6' },
+    { id: 'DD-13', text: 'Pharmaceuticals / medical devices: supplier meets appropriate quality controls', crit: false, src: SRC_POL + ' §2.8' },
+    { id: 'DD-14', text: 'High-risk category: technical expert involved (pharmacist, Director of Health, WASH, ICT, Logistics Manager)', crit: false, src: SRC_POL + ' §4' },
+    { id: 'DD-15', text: 'Payment route confirmed with Finance (bank details verified for international transfer)', crit: false, src: 'UK-Med International payments guidance' },
+  ];
+  const DOC_ITEMS = [
+    { id: 'DOC-01', text: 'Business registration certificate / trade licence', src: SRC_POL + ' §2.12(b),(e)' },
+    { id: 'DOC-02', text: 'Tax registration or tax clearance', src: SRC_POL + ' §2.12(e)' },
+    { id: 'DOC-03', text: 'Signed Supplier Due Diligence Form', src: SRC_POL + ' §3 (Tier 3–5)' },
+    { id: 'DOC-04', text: 'Signed eligibility declaration (§2.12) and Supplier Code of Conduct acknowledgement', src: SRC_POL + ' §2.12, §9' },
+    { id: 'DOC-05', text: 'UN sanctions screening record (date, list, result, checked by)', src: 'OCHA SHF Operational Manual §5.1.2.1' },
+    { id: 'DOC-06', text: 'Refinitiv check report', src: SRC_POL + ' §3 (Tier 5), footnote 6' },
+    { id: 'DOC-07', text: 'Bank details letter verified by Finance (kept by Finance, not on this page)', src: 'UK-Med International payments guidance; ApprovalMax procedure' },
+    { id: 'DOC-08', text: 'Signed contract / framework agreement', src: SRC_POL + ' §3 (contract: Tier 4–5; Tier 3 if complex/high risk)' },
+    { id: 'DOC-09', text: 'Product quality certificates (pharmaceuticals / medical devices)', src: SRC_POL + ' §2.8' },
+    { id: 'DOC-10', text: 'Undocumented local vendor: agreed Finance–Logistics procedure applied (signed itemised receipt slip / addendum)', src: 'UK-Med receipt guidance and Receipt Slip' },
+  ];
+  const EVAL_CRITERIA = [
+    { id: 'quality', text: 'Quality / specification compliance', src: SRC_POL + ' §2.1, §2.8' },
+    { id: 'time', text: 'Delivery on time', src: SRC_POL + ' §2.1 (speed)' },
+    { id: 'quantity', text: 'Complete and correct quantities', src: 'GRN check' },
+    { id: 'docs', text: 'Invoice / receipt quality (itemised, numbered, currency, legible, English)', src: 'UK-Med receipt guidance' },
+    { id: 'price', text: 'Price as quoted / value for money', src: SRC_POL + ' §2.1' },
+    { id: 'comms', text: 'Responsiveness and communication', src: 'UK-Med International payments guidance (supplier relationship)' },
+    { id: 'conduct', text: 'Conduct and contract compliance (no undeclared substandard delivery)', src: 'OCHA Partner Guidance Note on Fraud (2021)' },
+  ];
+  const MED_CATS = ['Medical supplies', 'Pharmaceuticals', 'Medical equipment'];
+  const HIGH_RISK_CATS = ['Medical supplies', 'Pharmaceuticals', 'Medical equipment', 'WASH', 'IT / Communications', 'Vehicles / Fleet', 'Accommodation / Food / NFI'];
+  const INFORMAL = 'Informal local-market trader';
+  function requiredDocs(v, maxTier) {
+    const t = maxTier || 0, req = ['DOC-04', 'DOC-05'];
+    if (v.vtype === INFORMAL) req.push('DOC-10'); else { req.push('DOC-01', 'DOC-02'); if (t >= 2) req.push('DOC-07'); }
+    if (t >= 3) req.push('DOC-03');
+    if (t >= 4) req.push('DOC-08');
+    if (t >= 5) req.push('DOC-06');
+    if (MED_CATS.includes(v.category)) req.push('DOC-09');
+    return DOC_ITEMS.map((d) => d.id).filter((id) => req.includes(id));
+  }
+  function vendorView(v, rows, today) {
+    const prs = rows.filter((r) => r.vendor_id === v.id);
+    const tiers = prs.map((r) => r.tier).filter((t) => t != null);
+    const maxTier = tiers.length ? Math.max(...tiers) : null;
+    const dd = v.dd || {};
+    let yes = 0, no = 0, na = 0; const critNo = [];
+    DD_ITEMS.forEach((it) => { const a = dd[it.id]; if (a === 'Yes') yes++; else if (a === 'No') { no++; if (it.crit) critNo.push(it.id); } else if (a === 'N/A') na++; });
+    const answered = yes + no + na, total = DD_ITEMS.length;
+    const score = yes + no ? Math.round(yes / (yes + no) * 1000) / 10 : null;
+    const ddState = !answered ? 'Not started' : answered < total ? 'In progress' : critNo.length ? 'Failed (critical)' : no ? 'Complete with gaps' : 'Passed';
+    const docs = v.docs || {}, req = requiredDocs(v, maxTier);
+    const missing = [], expired = [], expiring = [];
+    const soon = (() => { const [y, m, d] = today.split('-').map(Number); const x = new Date(Date.UTC(y, m - 1, d + 30)); return x.toISOString().slice(0, 10); })();
+    req.forEach((id) => {
+      const d = docs[id] || {};
+      const ok = d.st === 'Received' || (d.st === 'N/A' && d.ref);
+      if (!ok) missing.push(id);
+      else if (d.st === 'Received' && d.exp && d.exp < today) expired.push(id);
+      else if (d.st === 'Received' && d.exp && d.exp <= soon) expiring.push(id);
+    });
+    const evals = (v.evals || []).map((e) => {
+      const vals = EVAL_CRITERIA.map((c) => e.scores && e.scores[c.id]).filter((s) => typeof s === 'number');
+      return { ...e, pctScore: vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length / 5 * 1000) / 10 : null };
+    }).sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+    const scored = evals.filter((e) => e.pctScore != null);
+    const perf = scored.length ? Math.round(scored.reduce((a, e) => a + e.pctScore, 0) / scored.length * 10) / 10 : null;
+    const rating = perf == null ? null : perf >= 80 ? 'Good' : perf >= 60 ? 'Acceptable' : 'Poor';
+    const lastRating = scored.length ? (scored[0].pctScore >= 80 ? 'Good' : scored[0].pctScore >= 60 ? 'Acceptable' : 'Poor') : null;
+    return { prs, maxTier, dd: { yes, no, na, answered, total, score, critNo, state: ddState }, docs: { req, received: req.length - missing.length - expired.length, missing, expired, expiring }, evals, perf, rating, lastRating };
+  }
+  function vendorChecks(rows, vendors, today) {
+    const out = [];
+    const add = (pr, vendor, category, check, evidence) => out.push({ pr, vendor, category, check, evidence });
+    const byId = new Map(vendors.map((v) => [v.id, v]));
+    const views = new Map(vendors.map((v) => [v.id, vendorView(v, rows, today)]));
+    const docName = (id) => (DOC_ITEMS.find((d) => d.id === id) || {}).text || id;
+    for (const r of rows) {
+      const used = r.stage === 'OPEN' || r.stage === 'CLOSE';
+      if (!used) continue;
+      if (!r.vendor_id && r.supplier) { add(r.pr, null, 'Vendor compliance', 'Supplier not in vendor register', 'Supplier "' + r.supplier + '" has no vendor ID'); continue; }
+      if (!r.vendor_id) continue;
+      const v = byId.get(r.vendor_id);
+      if (!v) { add(r.pr, null, 'Vendor compliance', 'Vendor ID not found', 'Vendor ID ' + r.vendor_id + ' is not in the register'); continue; }
+      const vw = views.get(v.id);
+      if ((v.dd || {})['DD-08'] !== 'Yes') add(r.pr, v.id, 'Vendor compliance', 'Vendor not screened against UN sanctions list', v.id + ' ' + v.name + '; DD-08 = ' + ((v.dd || {})['DD-08'] || 'blank'));
+      if (r.tier != null && r.tier >= 3 && vw.docs.missing.includes('DOC-03')) add(r.pr, v.id, 'Vendor compliance', 'Tier ' + r.tier + ' PR: Supplier Due Diligence Form missing', v.id + ' ' + v.name + '; DOC-03 not received');
+      if (r.stage === 'OPEN' && (v.status === 'Suspended' || v.status === 'Inactive')) add(r.pr, v.id, 'Vendor compliance', 'Open PR with ' + v.status.toLowerCase() + ' vendor', v.id + ' ' + v.name + '; status ' + v.status);
+      if (r.stage === 'CLOSE' && !vw.evals.some((e) => e.pr === r.pr)) add(r.pr, v.id, 'Follow-up', 'No performance evaluation for closed PR', v.id + ' ' + v.name);
+    }
+    for (const v of vendors) {
+      const vw = views.get(v.id);
+      if (vw.dd.critNo.length && v.status !== 'Suspended') add(v.id, v.id, 'Vendor compliance', 'Critical due-diligence answer "No" — vendor not suspended', vw.dd.critNo.join(', ') + '; status ' + (v.status || 'blank'));
+      if (v.status === 'Approved' && (vw.docs.missing.length || vw.docs.expired.length)) add(v.id, v.id, 'Vendor compliance', 'Approved vendor with missing or expired documents', vw.docs.missing.concat(vw.docs.expired).map((id) => id + ' ' + docName(id)).join('; '));
+      if (v.status === 'Approved' && vw.dd.state !== 'Passed' && vw.dd.state !== 'Complete with gaps') add(v.id, v.id, 'Vendor compliance', 'Approved vendor without completed due diligence', 'Due diligence: ' + vw.dd.state + ' (' + vw.dd.answered + '/' + vw.dd.total + ' answered)');
+      vw.docs.expiring.forEach((id) => add(v.id, v.id, 'Follow-up', 'Document expiring within 30 days', id + ' ' + docName(id) + '; expires ' + ((v.docs || {})[id] || {}).exp));
+      if (vw.lastRating === 'Poor' && v.status === 'Approved') add(v.id, v.id, 'Follow-up', 'Poor performance — review vendor status', 'Latest evaluation ' + vw.evals[0].pctScore + '%');
+    }
+    return out;
+  }
+  return { derive, exceptions, kpis, TIERS, DD_ITEMS, DOC_ITEMS, EVAL_CRITERIA, HIGH_RISK_CATS, INFORMAL, requiredDocs, vendorView, vendorChecks };
 })();
 /* ===== END CORE ===== */
 </script>
@@ -424,7 +607,7 @@ const CORE = (() => {
   const PRIOS = ['HIGH', 'MEDIUM', 'LOW'];
   const FAMILIES = ['Fuel', 'Lease', 'Logistics', 'Others', 'Rent', 'Other'];
   const ITEMS = ['Cable', 'Construction', 'Diesel', 'Drinking-water', 'Electrical', 'GEN Oil', 'GH-OFFICE', 'Kitchen', 'Logo - Office', 'MERU-CLIN', 'Mix-Chad', 'Office', 'Repairs', 'Rooms-items', 'Spare-parts', 'Vehicle', 'Wifi', 'Other'];
-  const FIELD_LABEL = { pr: 'PR number', n: 'N', family: 'Family', item: 'Item', priority: 'Priority', validated: 'Validated', stage: 'Stage', pct: '% complete', open_date: 'Open date', closure_date: 'Closure date', responsible: 'Responsible', next_action: 'Next action', action_due: 'Action due', remarks: 'Remarks', est_value: 'Estimated value', currency: 'Currency', value_gbp: 'GBP equivalent', supplier: 'Supplier', po_ref: 'PO reference', grn_ref: 'GRN reference', invoice_ref: 'Invoice reference' };
+  const FIELD_LABEL = { pr: 'PR number', n: 'N', family: 'Family', item: 'Item', priority: 'Priority', validated: 'Validated', stage: 'Stage', pct: '% complete', open_date: 'Open date', closure_date: 'Closure date', responsible: 'Responsible', next_action: 'Next action', action_due: 'Action due', remarks: 'Remarks', est_value: 'Estimated value', currency: 'Currency', value_gbp: 'GBP equivalent', supplier: 'Supplier (as quoted)', vendor_id: 'Vendor (register)', po_ref: 'PO reference', grn_ref: 'GRN reference', invoice_ref: 'Invoice reference' };
   const fmtVal = (k, v) => v == null || v === '' ? '(blank)' : k === 'pct' ? Math.round(v * 100) + '%' : (k === 'open_date' || k === 'closure_date' || k === 'action_due') ? fmtDate(v) : String(v);
   const normalize = (v) => (v === '' || v === undefined) ? null : v;
   const same = (a, b) => JSON.stringify(normalize(a)) === JSON.stringify(normalize(b));
@@ -432,7 +615,7 @@ const CORE = (() => {
   const store = { get(k) { try { return JSON.parse(sessionStorage.getItem(k) || 'null'); } catch (e) { return null; } }, set(k, v) { try { sessionStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }, del(k) { try { sessionStorage.removeItem(k); } catch (e) {} } };
   const PKEY = 'sudan-pr-pending', UKEY = 'sudan-pr-ui';
 
-  const state = { work: new Map(), pending: [], rows: [], exc: [], k: null, filters: { q: '', stage: '', priority: '', risk: '', family: '', aging: '', flag: '' }, sort: { k: 'n', d: 1 }, tab: 'reg', canWrite: false, uid: null, selected: null, saving: false };
+  const state = { work: new Map(), vendors: new Map(), vviews: new Map(), vselected: null, pending: [], rows: [], exc: [], k: null, filters: { q: '', stage: '', priority: '', risk: '', family: '', aging: '', flag: '' }, sort: { k: 'n', d: 1 }, tab: 'reg', canWrite: false, uid: null, selected: null, saving: false };
   const ui = store.get(UKEY); if (ui) { if (ui.filters) state.filters = { ...state.filters, ...ui.filters }; if (ui.sort) state.sort = ui.sort; if (ui.tab) state.tab = ui.tab; }
   const saveUi = () => store.set(UKEY, { filters: state.filters, sort: state.sort, tab: state.tab });
 
@@ -458,27 +641,29 @@ const CORE = (() => {
     if (state.canWrite) { const img = el('img'); img.src = me.avatarUrl; img.alt = ''; $('#me').append(img, el('span', 'hide-sm', me.name || 'Editor')); }
   }
   if (!state.canWrite) $('#me').append(el('span', 'ro', 'View only'));
-  if (state.canWrite) $('#b-new').hidden = false;
-  if (downloads) { $('#b-export').hidden = false; $('#b-html').hidden = false; }
+  if (state.canWrite) { $('#b-new').hidden = false; $('#v-new').hidden = false; }
+  if (downloads) { $('#b-export').hidden = false; $('#b-html').hidden = false; $('#v-export').hidden = false; }
   const OFFLINE = !C;
   let editorName = ''; try { editorName = localStorage.getItem('sudan-pr-editor') || ''; } catch (e) {}
   if (OFFLINE) {
-    $('#b-export').hidden = false; $('#b-html').hidden = false;
+    $('#b-export').hidden = false; $('#b-html').hidden = false; $('#v-export').hidden = false;
     const eb = el('button', 'btn', 'Edit a copy'); eb.type = 'button'; eb.id = 'b-editcopy'; $('#b-new').before(eb);
     eb.onclick = () => enterOfflineEdit();
     const st0 = store.get('sudan-pr-pending'); if (st0 && st0.entries && st0.entries.length) state.canWrite = true;
   }
 
   /* ---------- working copy = saved state + this editor's unsaved changes ---------- */
-  function applyEntry(map, e) {
-    if (e.action === 'create') { map.set(e.pr, { ...e.doc }); return; }
+  function applyEntry(map, e, vmap) {
+    if (e.kind === 'vendor') map = vmap;
+    if (e.action === 'create') { map.set(e.pr, JSON.parse(JSON.stringify(e.doc))); return; }
     const d = map.get(e.pr); if (!d) return;
     const nd = { ...d }; (e.changes || []).forEach((c) => { nd[c.field] = c.to; }); map.set(e.pr, nd);
   }
   function rebuildWork() {
     const m = new Map(BASE.prs.map((d) => [d.pr, d]));
-    state.pending.forEach((e) => applyEntry(m, e));
-    state.work = m;
+    const vm = new Map((BASE.vendors || []).map((v) => [v.id, v]));
+    state.pending.forEach((e) => applyEntry(m, e, vm));
+    state.work = m; state.vendors = vm;
   }
   const stash = store.get(PKEY);
   let restoredNote = '';
@@ -536,8 +721,9 @@ const CORE = (() => {
   }
   function buildNext(saveId) {
     const prs = [...state.work.values()].map((d) => ({ ...d })).sort((a, b) => (a.n || 0) - (b.n || 0) || String(a.pr).localeCompare(String(b.pr)));
-    const log = state.pending.slice().reverse().map((e) => { const o = { at: e.at, by: e.by, pr: e.pr, action: e.action, changes: e.changes }; if (e.name) o.name = e.name; return o; }).concat(BASE.log || []).slice(0, 1500);
-    return { rev: (BASE.rev || 0) + 1, saveId, savedAt: new Date().toISOString(), savedBy: state.uid, source: BASE.source, prs, log };
+    const vendors = [...state.vendors.values()].map((v) => JSON.parse(JSON.stringify(v))).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+    const log = state.pending.slice().reverse().map((e) => { const o = { at: e.at, by: e.by, pr: e.pr, action: e.action, changes: e.changes }; if (e.kind) o.kind = e.kind; if (e.name) o.name = e.name; return o; }).concat(BASE.log || []).slice(0, 1500);
+    return { rev: (BASE.rev || 0) + 1, saveId, savedAt: new Date().toISOString(), savedBy: state.uid, source: BASE.source, prs, vendors, log };
   }
   async function saveFile(name, data, mime) {
     if (downloads) return downloads.save({ filename: name, data });
@@ -554,7 +740,7 @@ const CORE = (() => {
     toast('Updated page downloaded as index.html. Upload it to GitHub to update the public link.');
   }
   function enterOfflineEdit() {
-    state.canWrite = true; $('#b-new').hidden = false;
+    state.canWrite = true; $('#b-new').hidden = false; $('#v-new').hidden = false;
     const eb = $('#b-editcopy'); if (eb) eb.hidden = true;
     const ro = $('#me .ro'); if (ro) ro.textContent = 'Editing a copy';
     $('#sb-save').textContent = 'Download updated page';
@@ -574,19 +760,22 @@ const CORE = (() => {
     state.pending = []; persistPending(); rebuildWork(); recompute(); render(); if (state.selected) closeDrawer(); toast('Unsaved changes discarded');
     $('#sb-discard').dataset.confirm = ''; $('#sb-discard').textContent = 'Discard';
   };
-  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && state.canWrite) { e.preventDefault(); if (state.selected) doSave(); else saveAndPublish(); } });
+  document.addEventListener('keydown', (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's' && state.canWrite) { e.preventDefault(); if (state.vselected) vSave(); else if (state.selected) doSave(); else saveAndPublish(); } });
   function renderSavebar() {
     const n = state.pending.length, bar = $('#savebar');
     bar.hidden = !(state.canWrite && n); document.body.classList.toggle('has-savebar', !bar.hidden);
-    const prs = new Set(state.pending.map((e) => e.pr)).size;
-    $('#sb-text').textContent = n + ' unsaved change' + (n === 1 ? '' : 's') + ' on ' + prs + ' PR' + (prs === 1 ? '' : 's');
+    const prs = new Set(state.pending.filter((e) => e.kind !== 'vendor').map((e) => e.pr)).size, vs = new Set(state.pending.filter((e) => e.kind === 'vendor').map((e) => e.pr)).size;
+    $('#sb-text').textContent = n + ' unsaved change' + (n === 1 ? '' : 's') + ' on ' + [prs ? prs + ' PR' + (prs === 1 ? '' : 's') : '', vs ? vs + ' vendor' + (vs === 1 ? '' : 's') : ''].filter(Boolean).join(' and ');
   }
 
   /* ---------- derived data ---------- */
   function recompute() {
     const today = todayStr();
     state.rows = [...state.work.entries()].map(([id, r]) => CORE.derive({ ...r, _id: id }, today));
-    state.exc = CORE.exceptions(state.rows, today);
+    const vlist = [...state.vendors.values()];
+    state.vviews = new Map(vlist.map((v) => [v.id, CORE.vendorView(v, state.rows, today)]));
+    const ord = { 'Close-out compliance': 0, 'Vendor compliance': 1, Status: 2, 'Follow-up': 3, 'Data quality': 4 };
+    state.exc = CORE.exceptions(state.rows, today).concat(CORE.vendorChecks(state.rows, vlist, today)).sort((a, b) => ord[a.category] - ord[b.category] || a.check.localeCompare(b.check) || a.pr.localeCompare(b.pr));
     const byPr = new Map(); state.exc.forEach((e) => byPr.set(e.pr, (byPr.get(e.pr) || []).concat(e)));
     state.rows.forEach((r) => { r.excList = byPr.get(r.pr) || []; r.nexc = r.excList.length; });
     state.k = CORE.kpis(state.rows, state.exc, today);
@@ -596,7 +785,7 @@ const CORE = (() => {
   function render() {
     if (!state.rows.length) $('#take').textContent = 'The register is empty.';
     else renderTake();
-    renderKpis(); renderCharts(); renderFamilies(); renderTable(); renderExc(); renderSavebar();
+    renderKpis(); renderCharts(); renderFamilies(); renderTable(); renderExc(); renderVendors(); renderSavebar();
     if (state.tab === 'log') renderLog();
     $('#n-reg').textContent = state.rows.length; $('#n-exc').textContent = state.exc.length;
   }
@@ -627,7 +816,7 @@ const CORE = (() => {
       { l: 'Avg % complete', n: k.avg_init == null ? '—' : k.avg_init.toFixed(1) + '%', s: 'Open only: ' + (k.avg_open == null ? '—' : k.avg_open.toFixed(1) + '%'), act: () => setFilters({ stage: 'OPEN' }), on: false },
       { l: 'Critical + High', n: k.critical + k.high, s: k.critical + ' Critical · ' + k.high + ' High', cls: 'bad', act: () => setFilters({ stage: 'OPEN', flag: 'crithigh' }), on: f.flag === 'crithigh' },
       { l: 'No next action', n: k.no_next, s: 'Open PRs' + (k.overdue ? ' · ' + k.overdue + ' overdue' : ''), cls: 'warn', act: () => setFilters({ stage: 'OPEN', flag: 'nonext' }), on: f.flag === 'nonext' },
-      { l: 'Exceptions', n: k.exceptions, s: k.exc_prs + ' PRs affected', cls: 'warn', act: () => setFilters({ flag: 'exc' }), on: f.flag === 'exc' },
+      { l: 'Exceptions', n: k.exceptions, s: k.exc_prs + ' PRs / vendors affected', cls: 'warn', act: () => setFilters({ flag: 'exc' }), on: f.flag === 'exc' },
     ];
     $('#kpis').replaceChildren(...tiles.map((t) => {
       const b = el('button', 'kpi ' + (t.cls || '')); b.type = 'button'; b.setAttribute('aria-pressed', String(!!t.on));
@@ -766,11 +955,11 @@ const CORE = (() => {
   /* ---------- exceptions ---------- */
   let excCat = '';
   function renderExc() {
-    const cats = [['Close-out compliance', 'cat-comp'], ['Status', 'cat-stat'], ['Follow-up', 'cat-fol'], ['Data quality', 'cat-data']];
+    const cats = [['Close-out compliance', 'cat-comp'], ['Vendor compliance', 'cat-comp'], ['Status', 'cat-stat'], ['Follow-up', 'cat-fol'], ['Data quality', 'cat-data']];
     $('#xgroups').replaceChildren(...[['', 'All exceptions']].concat(cats.map(([c]) => [c, c])).map(([c, l]) => {
       const n = state.exc.filter((e) => !c || e.category === c).length;
       const b = el('button', 'xg'); b.type = 'button'; b.setAttribute('aria-pressed', String(excCat === c));
-      const nb = el('b', '', String(n)); if (c === 'Close-out compliance' && n) nb.style.color = 'var(--bad)';
+      const nb = el('b', '', String(n)); if ((c === 'Close-out compliance' || c === 'Vendor compliance') && n) nb.style.color = 'var(--bad)';
       b.append(nb, el('span', '', l)); b.onclick = () => { excCat = c; renderExc(); }; return b;
     }));
     const cls = Object.fromEntries(cats);
@@ -782,7 +971,7 @@ const CORE = (() => {
       const c = el('td'); c.append(el('span', 'chip ' + cls[e.category], e.category)); tr.append(c);
       txt(tr, e.check); txt(tr, e.evidence, 'wrap');
       const a = el('td', 'num'); const b = el('button', 'btn sm', state.canWrite ? 'Fix' : 'View'); b.type = 'button'; a.append(b); tr.append(a);
-      tr.addEventListener('click', () => openDrawer(e.pr));
+      tr.addEventListener('click', () => { if (state.work.has(e.pr)) openDrawer(e.pr); else if (e.vendor) openVendor(e.vendor); });
       return tr;
     }));
   }
@@ -800,17 +989,18 @@ const CORE = (() => {
     const ev = el('div', 'ev' + (l._pending ? ' pending' : '')); const p = ps[l.by];
     const img = el('img'); img.alt = ''; if (p && p.avatarUrl) img.src = p.avatarUrl; else img.style.visibility = 'hidden'; ev.append(img);
     const body = el('div'); const who = el('div', 'who');
-    who.append(el('b', '', (p && p.name) || l.name || 'Editor'), document.createTextNode(l.action === 'create' ? ' created ' : ' updated '));
-    const pr = el('span', 'pr', l.pr); pr.tabIndex = 0; pr.onclick = () => { if (state.work.has(l.pr)) openDrawer(l.pr); }; who.append(pr);
+    const isV = l.kind === 'vendor';
+    who.append(el('b', '', (p && p.name) || l.name || 'Editor'), document.createTextNode((l.action === 'create' ? ' created ' : ' updated ') + (isV ? 'vendor ' : '')));
+    const pr = el('span', 'pr', l.pr); pr.tabIndex = 0; pr.onclick = () => { if (isV) { if (state.vendors.has(l.pr)) openVendor(l.pr); } else if (state.work.has(l.pr)) openDrawer(l.pr); }; who.append(pr);
     body.append(who, el('div', 'when', (l._pending ? 'Unsaved · ' : '') + (l.at ? new Date(l.at).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : '')));
-    const ul = el('ul'); (l.changes || []).forEach((c) => ul.append(el('li', '', (FIELD_LABEL[c.field] || c.field) + ': ' + fmtVal(c.field, c.from) + ' → ' + fmtVal(c.field, c.to)))); body.append(ul);
+    const ul = el('ul'); (l.changes || []).forEach((c) => ul.append(el('li', '', isV ? (VFIELD_LABEL[c.field] || c.field) + ': ' + fmtVVal(c.field, c.from) + ' → ' + fmtVVal(c.field, c.to) : (FIELD_LABEL[c.field] || c.field) + ': ' + fmtVal(c.field, c.from) + ' → ' + fmtVal(c.field, c.to)))); body.append(ul);
     ev.append(body); return ev;
   }
 
   /* ---------- tabs ---------- */
   function showTab(t) {
     state.tab = t; saveUi(); $$('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.p === t)));
-    ['reg', 'exc', 'log', 'met'].forEach((p) => { $('#p-' + p).hidden = p !== t; });
+    ['reg', 'ven', 'exc', 'log', 'met'].forEach((p) => { $('#p-' + p).hidden = p !== t; });
     if (t === 'log') renderLog();
   }
   $$('.tab').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.p)));
@@ -820,11 +1010,11 @@ const CORE = (() => {
     ['Identification', [['pr', 'text'], ['family', 'list', FAMILIES], ['item', 'list', ITEMS], ['priority', 'select', ['', ...PRIOS]], ['validated', 'select', ['', 'Yes', 'No', 'Pending']]]],
     ['Status', [['stage', 'select', STAGES], ['pct', 'pct'], ['open_date', 'date'], ['closure_date', 'date']]],
     ['Follow-up', [['responsible', 'text'], ['action_due', 'date'], ['next_action', 'text', null, true], ['remarks', 'area', null, true]]],
-    ['Procurement documents', [['est_value', 'number'], ['currency', 'list', ['GBP', 'USD', 'EUR', 'SDG']], ['value_gbp', 'number'], ['supplier', 'text'], ['po_ref', 'text'], ['grn_ref', 'text'], ['invoice_ref', 'text']]],
+    ['Procurement documents', [['est_value', 'number'], ['currency', 'list', ['GBP', 'USD', 'EUR', 'SDG']], ['value_gbp', 'number'], ['vendor_id', 'vendor'], ['supplier', 'text'], ['po_ref', 'text'], ['grn_ref', 'text'], ['invoice_ref', 'text']]],
   ];
   let draft = null, isNew = false;
   function closeDrawer() { $('#drawer-root').replaceChildren(); state.selected = null; draft = null; renderTable(); }
-  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && state.selected) closeDrawer(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (state.vselected) closeVendor(); else if (state.selected) closeDrawer(); } });
   function nextPrNumber() { const nums = state.rows.map((r) => Number(r.n) || 0); const n = (nums.length ? Math.max(...nums) : 0) + 1; return { n, pr: 'PR-' + String(n).padStart(3, '0') }; }
   $('#b-new').onclick = () => { const { n, pr } = nextPrNumber(); isNew = true; draft = { n, pr, stage: 'NOT INITIATED', pct: 0, open_date: '', closure_date: '', family: '', item: '', priority: '', validated: '', responsible: '', next_action: '', action_due: '', remarks: '', est_value: null, currency: '', value_gbp: null, supplier: '', po_ref: '', grn_ref: '', invoice_ref: '' }; state.selected = '__new'; buildDrawer(); };
   function openDrawer(id) {
@@ -855,6 +1045,7 @@ const CORE = (() => {
         const id = 'fld-' + k; const lab = el('label', '', FIELD_LABEL[k] + (k === 'value_gbp' ? ' (£)' : '')); lab.htmlFor = id; w.append(lab);
         let input;
         if (type === 'select') { input = el('select'); opts.forEach((o) => input.append(new Option(o || '—', o))); }
+        else if (type === 'vendor') { input = el('select'); input.append(new Option('— not linked —', '')); [...state.vendors.values()].sort((a, b) => String(a.id).localeCompare(String(b.id))).forEach((v) => input.append(new Option(v.id + ' · ' + (v.name || '') + (v.status ? ' (' + v.status + ')' : ''), v.id))); }
         else if (type === 'area') input = el('textarea');
         else if (type === 'pct') { const row = el('div', 'pctrow'); const rg = el('input'); rg.type = 'range'; rg.min = 0; rg.max = 100; rg.step = 5; rg.id = 'fld-pct-r'; rg.setAttribute('aria-label', '% complete slider'); input = el('input'); input.type = 'number'; input.min = 0; input.max = 100; input.step = 1; rg.addEventListener('input', () => { input.value = rg.value; input.dispatchEvent(new Event('input')); }); rg.disabled = !state.canWrite; row.append(rg, input); w.append(row); }
         else { input = el('input'); input.type = type === 'list' ? 'text' : type; if (type === 'number') input.step = 'any'; if (type === 'list') { const dl = el('datalist'); dl.id = 'dl-' + k; opts.forEach((o) => dl.append(new Option(o))); w.append(dl); input.setAttribute('list', dl.id); } }
@@ -885,7 +1076,7 @@ const CORE = (() => {
     FORM.forEach(([, fields]) => fields.forEach(([k, type]) => {
       const input = $('#fld-' + k); if (!input) return;
       if (type === 'pct') { const v = Math.round((draft.pct || 0) * 1000) / 10; input.value = v; $('#fld-pct-r').value = v; }
-      else if (type === 'select') { const v = draft[k] ?? ''; if (![...input.options].some((o) => o.value === v)) input.append(new Option(v, v)); input.value = v; }
+      else if (type === 'select' || type === 'vendor') { const v = draft[k] ?? ''; if (![...input.options].some((o) => o.value === v)) input.append(new Option(v, v)); input.value = v; }
       else input.value = draft[k] ?? '';
     }));
     markChanged();
@@ -902,7 +1093,7 @@ const CORE = (() => {
   }
   function updateDerived() {
     const today = todayStr(); const r = CORE.derive({ ...draft }, today);
-    const ex = CORE.exceptions([r], today);
+    const ex = CORE.exceptions([r], today).concat(CORE.vendorChecks([r], [...state.vendors.values()], today).filter((e) => e.pr === r.pr));
     const c = $('#dcalc'); if (!c) return;
     const cell = (l, v, col) => { const d = el('div'); const b = el('b', '', v); if (col) b.style.color = col; d.append(el('span', '', l), b); return d; };
     const rc = { CRITICAL: 'var(--bad)', HIGH: 'var(--warn)', MEDIUM: 'var(--accent)' };
@@ -933,13 +1124,311 @@ const CORE = (() => {
     const pr = state.selected; closeDrawer(); addChange(pr, patch);
   }
 
+  /* ---------- VENDORS ---------- */
+  const VTYPES = ['Registered company', CORE.INFORMAL, 'Individual service provider', 'International supplier'];
+  const VCHANNELS = ['Tawila local market', "N'Djamena (Chad)", 'UK-Med HQ', 'Other'];
+  const VCATS = ['Medical supplies', 'Pharmaceuticals', 'Medical equipment', 'Fuel / Logistics', 'Vehicles / Fleet', 'Electrical / Energy', 'WASH', 'Construction / Rehabilitation', 'IT / Communications', 'Office / Admin', 'Security', 'Accommodation / Food / NFI', 'Services', 'Other'];
+  const VSTATUS = ['New', 'Under Verification', 'Approved', 'Suspended', 'Inactive'];
+  const VFIELD_LABEL = { id: 'Vendor ID', name: 'Legal name', trading_name: 'Trading name', vtype: 'Vendor type', channel: 'Sourcing channel', category: 'Category', products: 'Products / services', city: 'City', country: 'Country', contact_person: 'Contact person (role)', currency: 'Currency', payment_terms: 'Payment terms', status: 'Vendor status', high_risk: 'High-risk context', screen_date: 'UN screening date', screen_by: 'Screened by', dd_date: 'Due diligence date', dd_by: 'Due diligence by', notes: 'Notes', dd: 'Due diligence', docs: 'Documents', evals: 'Performance evaluations' };
+  const VFORM = [
+    ['Vendor', [['id', 'text'], ['status', 'select', VSTATUS], ['name', 'text', null, true], ['trading_name', 'text'], ['vtype', 'select', ['', ...VTYPES]], ['channel', 'select', ['', ...VCHANNELS]], ['category', 'select', ['', ...VCATS]], ['products', 'text', null, true], ['city', 'text'], ['country', 'text'], ['contact_person', 'text'], ['currency', 'list', ['GBP', 'USD', 'EUR', 'SDG', 'XAF']], ['payment_terms', 'text'], ['high_risk', 'select', ['', 'Yes', 'No']], ['notes', 'area', null, true]]],
+  ];
+  const fmtVVal = (k, v) => {
+    if (v == null || v === '') return '(blank)';
+    if (k === 'dd') { const a = Object.values(v).filter(Boolean); return a.length + '/' + CORE.DD_ITEMS.length + ' answered (' + a.filter((x) => x === 'Yes').length + ' Yes, ' + a.filter((x) => x === 'No').length + ' No)'; }
+    if (k === 'docs') { const a = Object.values(v); return a.filter((d) => d && d.st === 'Received').length + ' received, ' + a.filter((d) => d && d.st === 'Missing').length + ' missing'; }
+    if (k === 'evals') return v.length + ' evaluation' + (v.length === 1 ? '' : 's');
+    if (k === 'screen_date' || k === 'dd_date') return fmtDate(v);
+    return String(v);
+  };
+  const vsame = (a, b) => JSON.stringify(normalize(a) ?? null) === JSON.stringify(normalize(b) ?? null);
+  state.vsort = { k: 'id', d: 1 };
+  let vdraft = null, vIsNew = false;
+
+  function addVendorChange(vid, patch) {
+    if (!state.canWrite) return false;
+    const before = state.vendors.get(vid); if (!before) return false;
+    const changes = Object.keys(patch).filter((k) => !vsame(before[k], patch[k])).map((k) => ({ field: k, from: normalize(before[k]) ?? null, to: normalize(patch[k]) ?? null }));
+    if (!changes.length) return true;
+    const entry = { at: new Date().toISOString(), by: state.uid, kind: 'vendor', pr: vid, action: 'update', changes }; if (OFFLINE && editorName) entry.name = editorName;
+    state.pending.push(entry); persistPending(); rebuildWork(); recompute(); render();
+    toast(vid + ': ' + changes.map((c) => VFIELD_LABEL[c.field] || c.field).join(', ') + ' changed — not yet published', { undo: () => { const i = state.pending.lastIndexOf(entry); if (i >= 0) { state.pending.splice(i, 1); persistPending(); rebuildWork(); recompute(); render(); } } });
+    return true;
+  }
+  function addVendorCreate(doc) {
+    const entry = { at: new Date().toISOString(), by: state.uid, kind: 'vendor', pr: doc.id, action: 'create', doc, changes: Object.keys(doc).filter((k) => !['dd', 'docs', 'evals'].includes(k) && doc[k] != null && doc[k] !== '').map((k) => ({ field: k, from: null, to: doc[k] })) }; if (OFFLINE && editorName) entry.name = editorName;
+    state.pending.push(entry); persistPending(); rebuildWork(); recompute(); render();
+    toast(doc.id + ' added — not yet published');
+  }
+  function nextVendorId() {
+    const nums = [...state.vendors.keys()].map((k) => { const m = String(k).match(/(\d+)$/); return m ? Number(m[1]) : 0; });
+    return 'SUP-TWL-' + String((nums.length ? Math.max(...nums) : 0) + 1).padStart(4, '0');
+  }
+
+  /* vendor list */
+  $('#v-q').addEventListener('input', renderVendors);
+  $('#v-status').addEventListener('change', renderVendors);
+  $('#v-flag').addEventListener('change', renderVendors);
+  $$('#vend th button').forEach((b) => b.addEventListener('click', () => { const k = b.dataset.k; state.vsort = state.vsort.k === k ? { k, d: -state.vsort.d } : { k, d: 1 }; renderVendors(); }));
+  function vrows() {
+    return [...state.vendors.values()].map((v) => {
+      const vw = state.vviews.get(v.id);
+      const vexc = state.exc.filter((e) => e.vendor === v.id);
+      return { ...v, vw, ddScore: vw.dd.score == null ? -1 : vw.dd.score, docMissing: vw.docs.missing.length + vw.docs.expired.length, screen: v.screen_date || '', perf: vw.perf == null ? -1 : vw.perf, nprs: vw.prs.length, nexc: vexc.length, vexc };
+    });
+  }
+  function scorePill(pct, good) {
+    const s = el('span', 'score-pill'); if (pct == null) { s.textContent = '—'; s.classList.add('dim'); return s; }
+    const i = el('i'); const b = el('s'); b.style.width = Math.max(0, Math.min(100, pct)) + '%'; b.style.background = pct >= good ? 'var(--ok)' : pct >= 60 ? 'var(--warn)' : 'var(--bad)'; i.append(b);
+    s.append(i, document.createTextNode(Math.round(pct) + '%')); return s;
+  }
+  function renderVendors() {
+    const all = vrows();
+    $('#n-ven').textContent = all.length;
+    const k = {
+      total: all.length, approved: all.filter((v) => v.status === 'Approved').length,
+      ddPassed: all.filter((v) => v.vw.dd.state === 'Passed').length,
+      docIssues: all.filter((v) => v.docMissing).length,
+      noScreen: all.filter((v) => (v.dd || {})['DD-08'] !== 'Yes').length,
+    };
+    const scored = all.filter((v) => v.vw.perf != null);
+    const avgPerf = scored.length ? Math.round(scored.reduce((a, v) => a + v.vw.perf, 0) / scored.length * 10) / 10 : null;
+    const tiles = [['Vendors', k.total, k.approved + ' approved', ''], ['Due diligence passed', k.ddPassed, 'of ' + k.total + ' vendors', 'ok'], ['Document gaps', k.docIssues, 'missing or expired', k.docIssues ? 'warn' : ''], ['Not screened (UN list)', k.noScreen, 'DD-08 not "Yes"', k.noScreen ? 'bad' : ''], ['Avg performance', avgPerf == null ? '—' : avgPerf.toFixed(1) + '%', scored.length + ' vendor(s) evaluated', '']];
+    $('#vkpis').replaceChildren(...tiles.map(([l, n, s, c]) => { const t = el('div', 'kpi ' + c); t.style.cursor = 'default'; t.append(el('span', 'l', l), el('span', 'n', String(n)), el('span', 's', s)); return t; }));
+    const q = $('#v-q').value.trim().toLowerCase(), st = $('#v-status').value, fl = $('#v-flag').value;
+    let list = all.filter((v) => (!st || v.status === st) && (!q || [v.id, v.name, v.trading_name, v.category, v.city, v.country, v.products, v.channel].join(' ').toLowerCase().includes(q))
+      && (!fl || (fl === 'ddopen' ? v.vw.dd.state !== 'Passed' : fl === 'docs' ? v.docMissing > 0 : fl === 'noscreen' ? (v.dd || {})['DD-08'] !== 'Yes' : fl === 'poor' ? v.vw.lastRating === 'Poor' : true)));
+    list.sort((a, b) => cmp(a, b, state.vsort.k) * state.vsort.d || String(a.id).localeCompare(String(b.id)));
+    $$('#vend th').forEach((th) => { const b = th.querySelector('button'); th.removeAttribute('aria-sort'); if (b && b.dataset.k === state.vsort.k) th.setAttribute('aria-sort', state.vsort.d === 1 ? 'ascending' : 'descending'); });
+    $('#v-count').textContent = list.length + ' of ' + all.length + ' vendors';
+    const tb = $('#vend tbody');
+    if (!list.length) { const tr = el('tr'); const td = el('td', 'empty', all.length ? 'No vendors match these filters.' : (state.canWrite ? 'No vendors registered yet. Add the first one with "+ New vendor".' : 'No vendors registered yet.')); td.colSpan = 12; tr.append(td); tb.replaceChildren(tr); return; }
+    const pend = new Set(state.pending.filter((e) => e.kind === 'vendor').map((e) => e.pr));
+    tb.replaceChildren(...list.map((v) => {
+      const sev = v.vexc.some((e) => e.category === 'Vendor compliance') ? 'CRITICAL' : v.vexc.length ? 'HIGH' : '-';
+      const tr = el('tr', 'r-' + sev); tr.tabIndex = 0; tr.append(el('td', 'stripe'));
+      const key = txt(tr, v.id, 'key'); if (pend.has(v.id)) { key.append(el('span', '', ' •')); key.style.color = 'var(--warn)'; key.title = 'Unsaved changes'; }
+      txt(tr, v.name, 'wrap'); txt(tr, v.vtype, 'hide-sm nowrap'); txt(tr, v.category, 'hide-sm nowrap');
+      const s = el('td'); s.append(el('span', 'chip st-' + String(v.status || '').split(' ')[0], v.status || '—')); tr.append(s);
+      const d = el('td'); d.append(scorePill(v.vw.dd.score, 100), el('div', 'note', v.vw.dd.state + ' · ' + v.vw.dd.answered + '/' + v.vw.dd.total)); tr.append(d);
+      const dc = el('td', 'nowrap'); dc.textContent = v.vw.docs.received + '/' + v.vw.docs.req.length + ' required'; if (v.docMissing) { dc.style.color = 'var(--bad)'; dc.style.fontWeight = 600; } tr.append(dc);
+      const sc = txt(tr, (v.dd || {})['DD-08'] === 'Yes' ? fmtDate(v.screen_date) || 'Yes (no date)' : ((v.dd || {})['DD-08'] || 'Not done'), 'hide-sm nowrap'); if ((v.dd || {})['DD-08'] !== 'Yes') { sc.style.color = 'var(--bad)'; sc.classList.remove('dim'); }
+      const pf = el('td', 'num'); pf.append(scorePill(v.vw.perf, 80)); tr.append(pf);
+      txt(tr, v.nprs, 'num');
+      const fx = el('td', 'num'); if (v.nexc) { const b = el('span', 'exflag' + (sev === 'CRITICAL' ? ' c' : ''), String(v.nexc)); b.title = v.vexc.map((e) => e.check).join('\n'); fx.append(b); } tr.append(fx);
+      tr.addEventListener('click', () => openVendor(v.id));
+      tr.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.target === tr) openVendor(v.id); });
+      return tr;
+    }));
+  }
+
+  /* vendor drawer */
+  $('#v-new').onclick = () => {
+    vIsNew = true; state.vselected = '__new';
+    vdraft = { id: nextVendorId(), name: '', trading_name: '', vtype: '', channel: '', category: '', products: '', city: '', country: '', contact_person: '', currency: '', payment_terms: '', status: 'New', high_risk: '', screen_date: '', screen_by: '', dd_date: '', dd_by: '', notes: '', dd: {}, docs: {}, evals: [], created: todayStr() };
+    buildVendorDrawer();
+  };
+  function openVendor(id) {
+    const v = state.vendors.get(id); if (!v) return;
+    vIsNew = false; state.vselected = id; vdraft = JSON.parse(JSON.stringify(v)); vdraft.dd = vdraft.dd || {}; vdraft.docs = vdraft.docs || {}; vdraft.evals = vdraft.evals || []; buildVendorDrawer();
+  }
+  function closeVendor() { $('#drawer-root').replaceChildren(); state.vselected = null; vdraft = null; }
+  function vChangedKeys() {
+    if (vIsNew) return [];
+    const base = state.vendors.get(state.vselected) || {};
+    return Object.keys(VFIELD_LABEL).filter((k) => k !== 'id' && !vsame(base[k], vdraft[k]));
+  }
+  function buildVendorDrawer() {
+    const root = $('#drawer-root'); root.replaceChildren();
+    const ro = !state.canWrite;
+    const scrim = el('div', 'scrim'); scrim.onclick = closeVendor;
+    const d = el('aside', 'drawer wide'); d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', (ro ? 'View ' : 'Edit ') + vdraft.id);
+    const h = el('div', 'dh'); const hl = el('div'); const ttl = el('h3', '', vIsNew ? 'New vendor' : vdraft.id); const sub = el('div', 'sub'); sub.id = 'vsub'; hl.append(ttl, sub);
+    const x = el('button', 'btn sm x', 'Close'); x.type = 'button'; x.onclick = closeVendor; h.append(hl, x);
+    const body = el('div', 'db');
+    body.append(el('div', 'warnbox', 'This page can be public. Do not enter bank account numbers, ID or passport numbers, personal phone numbers or emails here. Record where each document is filed (e.g. "Finance drive / SUP-TWL-0001 / DOC-02") instead.'));
+    const calc = el('div', 'calc'); calc.id = 'vcalc'; body.append(calc);
+    const vx = el('ul', 'dx'); vx.id = 'vexc'; body.append(vx);
+    // profile
+    VFORM.forEach(([leg, fields]) => {
+      const fs = el('fieldset'); fs.append(el('legend', '', leg));
+      fields.forEach(([k, type, opts, full]) => {
+        const w = el('div', 'fld' + (full || type === 'area' ? ' full' : '')); w.dataset.k = k;
+        const lab = el('label', '', VFIELD_LABEL[k]); lab.htmlFor = 'vf-' + k; w.append(lab);
+        let input;
+        if (type === 'select') { input = el('select'); opts.forEach((o) => input.append(new Option(o || '—', o))); }
+        else if (type === 'area') input = el('textarea');
+        else { input = el('input'); input.type = 'text'; if (type === 'list') { const dl = el('datalist'); dl.id = 'vdl-' + k; opts.forEach((o) => dl.append(new Option(o))); w.append(dl); input.setAttribute('list', dl.id); } }
+        input.id = 'vf-' + k; const v = vdraft[k] ?? ''; if (type === 'select' && ![...input.options].some((o) => o.value === v)) input.append(new Option(v, v)); input.value = v;
+        if (ro || (k === 'id' && !vIsNew)) input.disabled = true;
+        const on = () => { vdraft[k] = k === 'notes' ? input.value : input.value.trim(); vMark(); vUpdate(); };
+        input.addEventListener('input', on); input.addEventListener('change', on);
+        w.append(input); fs.append(w);
+      });
+      body.append(fs);
+    });
+    // due diligence
+    const dds = el('div', 'vsec'); const ddh = el('h4', '', 'Due diligence — Yes / No / N/A '); const ddsc = el('b'); ddsc.id = 'vddscore'; ddh.append(ddsc); dds.append(ddh);
+    const ddmeta = el('fieldset');
+    [['dd_date', 'Due diligence date', 'date'], ['dd_by', 'Due diligence by', 'text'], ['screen_date', 'UN screening date', 'date'], ['screen_by', 'Screened by', 'text']].forEach(([k, l, t]) => {
+      const w = el('div', 'fld'); w.dataset.k = k; const lab = el('label', '', l); lab.htmlFor = 'vf-' + k; const i = el('input'); i.type = t; i.id = 'vf-' + k; i.value = vdraft[k] || ''; i.disabled = ro;
+      const on = () => { vdraft[k] = i.value.trim(); vMark(); vUpdate(); }; i.addEventListener('input', on); i.addEventListener('change', on); w.append(lab, i); ddmeta.append(w);
+    });
+    dds.append(ddmeta);
+    CORE.DD_ITEMS.forEach((it) => {
+      const row = el('div', 'ddrow'); row.append(el('span', 'ref', it.id));
+      const q = el('div', 'q'); q.append(document.createTextNode(it.text)); if (it.crit) q.append(el('span', 'crit', 'CRITICAL')); q.append(el('small', '', it.src)); row.append(q);
+      const seg = el('div', 'seg'); seg.setAttribute('role', 'group'); seg.setAttribute('aria-label', it.id + ' answer');
+      [['Yes', 'y'], ['No', 'n'], ['N/A', 'x']].forEach(([val, c]) => {
+        const b = el('button', c, val); b.type = 'button'; b.disabled = ro; b.setAttribute('aria-pressed', String(vdraft.dd[it.id] === val));
+        b.onclick = () => { vdraft.dd = { ...vdraft.dd, [it.id]: vdraft.dd[it.id] === val ? '' : val }; if (!vdraft.dd[it.id]) delete vdraft.dd[it.id]; $$('button', seg).forEach((bb) => bb.setAttribute('aria-pressed', String(vdraft.dd[it.id] === bb.textContent))); vMark(); vUpdate(); };
+        seg.append(b);
+      });
+      row.append(seg); dds.append(row);
+    });
+    body.append(dds);
+    // documents
+    const ds = el('div', 'vsec'); const dsh = el('h4', '', 'Required documents '); const dsc = el('b'); dsc.id = 'vdocscore'; dsh.append(dsc); ds.append(dsh);
+    const dhead = el('div', 'docrow'); ['Ref', 'Document', 'Status', 'Filed at / justification', 'Expiry'].forEach((t) => dhead.append(el('span', 'note', t))); ds.append(dhead);
+    const docBox = el('div'); docBox.id = 'vdocs'; ds.append(docBox); body.append(ds);
+    // performance
+    const ps = el('div', 'vsec'); const psh = el('h4', '', 'Performance evaluations '); const psc = el('b'); psc.id = 'vperf'; psh.append(psc); ps.append(psh);
+    ps.append(el('p', 'note', 'Each criterion 1 (very poor) – 5 (excellent) or N/A; the evaluation score is the average as a %. Board rating bands: Good ≥ 80%, Acceptable 60–79%, Poor < 60%.'));
+    const evBox = el('div'); evBox.id = 'vevals'; ps.append(evBox);
+    if (!ro) ps.append(buildEvalForm());
+    body.append(ps);
+    // linked PRs
+    const ls = el('div', 'vsec'); ls.append(el('h4', '', 'Linked PRs')); const lb = el('div'); lb.id = 'vprs'; ls.append(lb); body.append(ls);
+    const foot = el('div', 'df'); const info = el('span', 'note sp'); info.id = 'vinfo';
+    const cancel = el('button', 'btn', ro ? 'Close' : 'Cancel'); cancel.type = 'button'; cancel.onclick = closeVendor; foot.append(info, cancel);
+    if (!ro) { const sv = el('button', 'btn primary', vIsNew ? 'Add vendor' : 'Apply changes'); sv.type = 'button'; sv.id = 'vsave'; sv.onclick = vSave; foot.append(sv); }
+    d.append(h, body, foot); root.append(scrim, d);
+    vUpdate(); vMark();
+    setTimeout(() => (ro ? x : $('#vf-name'))?.focus(), 50);
+  }
+  function buildEvalForm() {
+    const f = el('div', 'evform'); f.append(el('div', 'note', 'Add an evaluation (normally after delivery / GRN of a PR)'));
+    const top = el('fieldset');
+    const mk = (id, l, type, opts) => { const w = el('div', 'fld'); const lab = el('label', '', l); lab.htmlFor = id; let i; if (opts) { i = el('select'); opts.forEach(([v, t]) => i.append(new Option(t, v))); } else { i = el('input'); i.type = type; } i.id = id; w.append(lab, i); top.append(w); return i; };
+    const dt = mk('ev-date', 'Date', 'date'); dt.value = todayStr();
+    const prSel = mk('ev-pr', 'PR', null, [['', '—']].concat(state.rows.filter((r) => r.vendor_id === vdraft.id).map((r) => [r.pr, r.pr + ' · ' + (r.item || '')])));
+    mk('ev-by', 'Evaluated by', 'text');
+    f.append(top);
+    const g = el('div', 'evgrid');
+    CORE.EVAL_CRITERIA.forEach((c) => { const l = el('label', '', c.text); l.htmlFor = 'ev-' + c.id; const s = el('select'); s.id = 'ev-' + c.id; [['', '—'], ['5', '5 Excellent'], ['4', '4 Good'], ['3', '3 Fair'], ['2', '2 Poor'], ['1', '1 Very poor'], ['na', 'N/A']].forEach(([v, t]) => s.append(new Option(t, v))); g.append(l, s); });
+    f.append(g);
+    const cw = el('div', 'fld full'); const cl = el('label', '', 'Comment / evidence (GRN, delay days, issues)'); cl.htmlFor = 'ev-comment'; const ct = el('textarea'); ct.id = 'ev-comment'; cw.append(cl, ct); f.append(cw);
+    const add = el('button', 'btn sm', 'Add evaluation'); add.type = 'button';
+    add.onclick = () => {
+      const scores = {}; let n = 0;
+      CORE.EVAL_CRITERIA.forEach((c) => { const v = $('#ev-' + c.id).value; if (v && v !== 'na') { scores[c.id] = Number(v); n++; } else if (v === 'na') scores[c.id] = 'N/A'; });
+      if (!n) { toast('Score at least one criterion.', { err: true }); return; }
+      if (!$('#ev-by').value.trim()) { toast('Enter who evaluated the vendor.', { err: true }); return; }
+      vdraft.evals = vdraft.evals.concat({ id: 'EV-' + Date.now().toString(36), date: $('#ev-date').value, pr: $('#ev-pr').value, by: $('#ev-by').value.trim(), scores, comment: $('#ev-comment').value.trim() });
+      CORE.EVAL_CRITERIA.forEach((c) => { $('#ev-' + c.id).value = ''; }); $('#ev-comment').value = ''; $('#ev-pr').value = '';
+      vMark(); vUpdate(); toast('Evaluation added to the draft — click "Apply changes" to keep it.');
+    };
+    f.append(add); return f;
+  }
+  function vMark() {
+    const ch = new Set(vChangedKeys());
+    $$('.drawer .fld[data-k]').forEach((w) => w.classList.toggle('chg', ch.has(w.dataset.k)));
+    const info = $('#vinfo'); if (info) info.textContent = !state.canWrite ? 'View only' : vIsNew ? '' : ch.size ? ch.size + ' section' + (ch.size > 1 ? 's' : '') + ' edited' : 'No changes';
+  }
+  function vUpdate() {
+    const today = todayStr();
+    const vw = CORE.vendorView(vdraft, state.rows, today);
+    const sub = $('#vsub'); if (sub) sub.textContent = [vdraft.name || 'No name yet', vdraft.vtype, vdraft.category].filter(Boolean).join(' · ');
+    const cell = (l, v, col) => { const d = el('div'); const b = el('b', '', v); if (col) b.style.color = col; d.append(el('span', '', l), b); return d; };
+    const ddCol = vw.dd.state === 'Passed' ? 'var(--ok)' : vw.dd.state === 'Failed (critical)' ? 'var(--bad)' : 'var(--warn)';
+    $('#vcalc').replaceChildren(cell('Due diligence', vw.dd.state, ddCol), cell('DD score', vw.dd.score == null ? '—' : vw.dd.score + '%'), cell('Documents', vw.docs.received + '/' + vw.docs.req.length, vw.docs.missing.length || vw.docs.expired.length ? 'var(--bad)' : 'var(--ok)'),
+      cell('Performance', vw.perf == null ? '—' : vw.perf + '% ' + vw.rating, vw.rating === 'Poor' ? 'var(--bad)' : vw.rating === 'Good' ? 'var(--ok)' : null), cell('Highest tier used', vw.maxTier ? 'Tier ' + vw.maxTier : 'Not known'));
+    const exc = CORE.vendorChecks(state.rows.filter((r) => r.vendor_id === vdraft.id), [vdraft], today).filter((e) => e.vendor === vdraft.id);
+    $('#vexc').replaceChildren(...(exc.length ? exc.map((e) => el('li', e.category === 'Vendor compliance' ? 'c' : '', e.check + ' — ' + e.evidence)) : [el('li', 'ok', 'No vendor exceptions with the values shown.')]));
+    $('#vddscore').textContent = vw.dd.answered + '/' + vw.dd.total + ' answered · score ' + (vw.dd.score == null ? '—' : vw.dd.score + '%') + (vw.dd.critNo.length ? ' · critical "No": ' + vw.dd.critNo.join(', ') : '');
+    $('#vdocscore').textContent = vw.docs.received + ' of ' + vw.docs.req.length + ' required received' + (vw.maxTier ? ' (vendor type + Tier ' + vw.maxTier + ')' : ' (tier not known: values not entered on linked PRs)');
+    if (!$('#vdocs').childElementCount) renderDocRows(vw); else refreshDocRows(vw);
+    renderEvals(vw);
+    const lp = $('#vprs'); const prs = vw.prs;
+    lp.replaceChildren(...(prs.length ? prs.map((r) => { const s = el('div', 'note'); const a = el('span', 'pr mono', r.pr); a.style.cursor = 'pointer'; a.style.textDecoration = 'underline'; a.onclick = () => { closeVendor(); openDrawer(r.pr); }; s.append(a, document.createTextNode(' · ' + (r.item || '') + ' · ' + r.stage + (r.tier ? ' · Tier ' + r.tier : ''))); return s; }) : [el('div', 'note', vIsNew ? 'Link PRs after saving: open a PR and choose this vendor in "Vendor (register)".' : 'No PR linked yet. Open a PR and choose this vendor in "Vendor (register)".')]));
+  }
+  function renderDocRows(vw) {
+    const box = $('#vdocs'); const ro = !state.canWrite; const today = todayStr();
+    box.replaceChildren(...CORE.DOC_ITEMS.map((it) => {
+      const req = vw.docs.req.includes(it.id); const d = vdraft.docs[it.id] || {};
+      const bad = vw.docs.missing.includes(it.id) || vw.docs.expired.includes(it.id), warn = vw.docs.expiring.includes(it.id);
+      const row = el('div', 'docrow' + (req ? ' req' : '') + (bad ? ' bad' : warn ? ' warn' : '')); row.dataset.doc = it.id;
+      row.append(el('span', 'ref', it.id));
+      const t = el('div'); const tag = el('span', 'tag ' + (req ? 'req' : 'opt'), req ? 'REQUIRED' : 'if applicable'); tag.dataset.role = 'tag'; t.append(document.createTextNode(it.text + ' '), tag, el('div', 'note', it.src)); row.append(t);
+      const set = (k, v) => { const nd = { ...(vdraft.docs[it.id] || {}), [k]: v }; if (!nd[k]) delete nd[k]; if (!nd.st && !nd.ref && !nd.exp) { const c = { ...vdraft.docs }; delete c[it.id]; vdraft.docs = c; } else vdraft.docs = { ...vdraft.docs, [it.id]: nd }; vMark(); vUpdate(); };
+      const st = el('select'); st.setAttribute('aria-label', it.id + ' status'); ['', 'Received', 'Missing', 'N/A'].forEach((o) => st.append(new Option(o || '—', o))); st.value = d.st || ''; st.disabled = ro; st.onchange = () => set('st', st.value);
+      const ref = el('input'); ref.type = 'text'; ref.placeholder = d.st === 'N/A' ? 'Justification for N/A' : 'Where filed'; ref.setAttribute('aria-label', it.id + ' filed at'); ref.value = d.ref || ''; ref.disabled = ro; ref.oninput = () => set('ref', ref.value.trim());
+      const ex = el('input'); ex.type = 'date'; ex.setAttribute('aria-label', it.id + ' expiry date'); ex.value = d.exp || ''; ex.disabled = ro; ex.onchange = () => set('exp', ex.value); ex.oninput = ex.onchange;
+      if (d.exp && d.exp < today) { ex.style.borderColor = 'var(--bad)'; ex.title = 'Expired'; }
+      row.append(st, ref, ex); return row;
+    }));
+  }
+  function refreshDocRows(vw) {
+    const today = todayStr();
+    $$('#vdocs .docrow').forEach((row) => {
+      const id = row.dataset.doc, req = vw.docs.req.includes(id), d = vdraft.docs[id] || {};
+      const bad = vw.docs.missing.includes(id) || vw.docs.expired.includes(id), warn = vw.docs.expiring.includes(id);
+      row.className = 'docrow' + (req ? ' req' : '') + (bad ? ' bad' : warn ? ' warn' : '');
+      const tag = row.querySelector('[data-role=tag]'); tag.className = 'tag ' + (req ? 'req' : 'opt'); tag.textContent = req ? 'REQUIRED' : 'if applicable';
+      const ref = row.querySelector('input[type=text]'); ref.placeholder = d.st === 'N/A' ? 'Justification for N/A' : 'Where filed';
+      const ex = row.querySelector('input[type=date]'); const expd = d.exp && d.exp < today; ex.style.borderColor = expd ? 'var(--bad)' : ''; ex.title = expd ? 'Expired' : '';
+    });
+  }
+  function renderEvals(vw) {
+    const box = $('#vevals'); const p = $('#vperf'); p.textContent = vw.perf == null ? 'no evaluations yet' : vw.evals.length + ' evaluation(s) · average ' + vw.perf + '% · ' + vw.rating;
+    if (!vw.evals.length) { box.replaceChildren(); return; }
+    const t = el('table', 'mtable evtable'); const hd = el('tr'); ['Date', 'PR', 'By', ...CORE.EVAL_CRITERIA.map((c) => c.text.split(' ')[0]), 'Score', 'Comment', ''].forEach((h) => hd.append(el('th', '', h))); const th = el('thead'); th.append(hd); t.append(th);
+    const tb = el('tbody');
+    vw.evals.forEach((e) => {
+      const tr = el('tr'); [fmtDate(e.date), e.pr || '—', e.by || '—', ...CORE.EVAL_CRITERIA.map((c) => e.scores[c.id] == null ? '—' : String(e.scores[c.id])), e.pctScore == null ? '—' : e.pctScore + '%', e.comment || ''].forEach((v) => tr.append(el('td', '', v)));
+      const a = el('td'); if (state.canWrite) { const rm = el('button', 'btn sm danger', 'Remove'); rm.type = 'button'; rm.onclick = () => { vdraft.evals = vdraft.evals.filter((x) => x.id !== e.id); vMark(); vUpdate(); }; a.append(rm); } tr.append(a);
+      tb.append(tr);
+    });
+    t.append(tb); const wrap = el('div', 'tbl-wrap'); wrap.style.maxHeight = 'none'; wrap.append(t); box.replaceChildren(wrap);
+  }
+  function vSave() {
+    if (!state.canWrite || !vdraft) return;
+    if (!String(vdraft.name || '').trim()) { toast('Enter the vendor legal name.', { err: true }); return; }
+    if (vIsNew) {
+      const id = String(vdraft.id || '').trim();
+      if (!/^[A-Za-z0-9_\-.]{1,40}$/.test(id)) { toast('Vendor ID may use letters, digits, "-" and "." only.', { err: true }); return; }
+      if (state.vendors.has(id)) { toast(id + ' already exists.', { err: true }); return; }
+      const doc = {}; Object.keys(VFIELD_LABEL).forEach((k) => { doc[k] = vdraft[k] ?? (k === 'dd' || k === 'docs' ? {} : k === 'evals' ? [] : ''); }); doc.id = id; doc.created = vdraft.created || todayStr();
+      closeVendor(); addVendorCreate(doc); return;
+    }
+    const keys = vChangedKeys(); if (!keys.length) { closeVendor(); return; }
+    const patch = {}; keys.forEach((k) => { patch[k] = JSON.parse(JSON.stringify(vdraft[k] ?? null)); });
+    const id = state.vselected; closeVendor(); addVendorChange(id, patch);
+  }
+  $('#v-export').onclick = async () => {
+    const esc = (v) => { if (v == null) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+    const head = ['VENDOR ID', 'LEGAL NAME', 'TRADING NAME', 'TYPE', 'CHANNEL', 'CATEGORY', 'CITY', 'COUNTRY', 'STATUS', 'DD STATE', 'DD SCORE %', 'DD ANSWERED', 'CRITICAL NO', 'UN SCREENING (DD-08)', 'SCREEN DATE', 'DOCS RECEIVED', 'DOCS REQUIRED', 'MISSING DOCS', 'EXPIRED DOCS', 'EVALUATIONS', 'PERFORMANCE %', 'RATING', 'LINKED PRS', 'FLAGS'];
+    const rows = vrows().sort((a, b) => String(a.id).localeCompare(String(b.id))).map((v) => [v.id, v.name, v.trading_name, v.vtype, v.channel, v.category, v.city, v.country, v.status, v.vw.dd.state, v.vw.dd.score, v.vw.dd.answered + '/' + v.vw.dd.total, v.vw.dd.critNo.join(' '), (v.dd || {})['DD-08'] || '', v.screen_date, v.vw.docs.received, v.vw.docs.req.length, v.vw.docs.missing.join(' '), v.vw.docs.expired.join(' '), v.vw.evals.length, v.vw.perf, v.vw.rating, v.vw.prs.map((r) => r.pr).join(' '), v.vexc.map((e) => e.check).join(' | ')].map(esc).join(','));
+    try { await saveFile('Sudan_Vendor_Register_' + todayStr() + '.csv', '﻿' + [head.join(','), ...rows].join('\r\n'), 'text/csv'); toast('Vendor export saved'); }
+    catch (e) { if (e && e.code !== 'declined') toast('Export is not available here.', { err: true }); }
+  };
+  function renderVendorRequirements() {
+    const tb = $('#vreq-t tbody'); if (!tb) return;
+    const docApplies = { 'DOC-01': 'Registered / international vendors', 'DOC-02': 'Registered / international vendors', 'DOC-03': 'Any vendor on a Tier 3+ PR', 'DOC-04': 'All vendors', 'DOC-05': 'All vendors', 'DOC-06': 'Tier 5 (any tier if high-risk context, optional)', 'DOC-07': 'Registered / international vendors on Tier 2+ PRs (board rule: >£500 usually paid by international transfer)', 'DOC-08': 'Tier 4–5 (Tier 3 if complex / high risk)', 'DOC-09': 'Medical supplies, pharmaceuticals, medical equipment', 'DOC-10': 'Informal local-market traders (board rule, pending the agreed Finance–Logistics procedure)' };
+    const rows = CORE.DD_ITEMS.map((it) => [it.id, it.text + (it.crit ? ' (critical: a "No" must lead to suspension)' : ''), 'All vendors (answer N/A where not applicable)', it.src])
+      .concat(CORE.DOC_ITEMS.map((it) => [it.id, it.text, docApplies[it.id] || '', it.src]))
+      .concat(CORE.EVAL_CRITERIA.map((c) => ['EVAL', c.text, 'Each evaluation, scored 1–5', c.src]))
+      .concat([['RULE', 'Document expiring within 30 days → follow-up flag; rating bands Good ≥80%, Acceptable 60–79%, Poor <60%', 'All vendors', 'Board rule (adjustable)']]);
+    tb.replaceChildren(...rows.map((r) => { const tr = el('tr'); r.forEach((v, i) => tr.append(el('td', i === 0 ? 'mono' : '', v))); return tr; }));
+  }
+
   /* ---------- exports ---------- */
   $('#b-export').onclick = async () => {
-    const cols = ['n', 'pr', 'family', 'item', 'priority', 'validated', 'stage', 'open_date', 'closure_date', 'pct', 'days', 'aging', 'risk', 'responsible', 'next_action', 'action_due', 'remarks', 'est_value', 'currency', 'value_gbp', 'tier', 'supplier', 'po_ref', 'grn_ref', 'invoice_ref', 'nexc'];
-    const head = ['N', 'PR N.', 'FAMILY', 'ITEM', 'PRIORITY', 'VALIDATED', 'STAGE', 'OPEN DATE', 'CLOSURE DATE', '% COMPLETE', 'DAYS', 'AGING', 'RISK FLAG', 'RESPONSIBLE', 'NEXT ACTION', 'ACTION DUE', 'REMARKS', 'EST. VALUE', 'CURRENCY', 'VALUE GBP', 'TIER', 'SUPPLIER', 'PO REF', 'GRN REF', 'INVOICE REF', 'EXCEPTIONS'];
+    const cols = ['n', 'pr', 'family', 'item', 'priority', 'validated', 'stage', 'open_date', 'closure_date', 'pct', 'days', 'aging', 'risk', 'responsible', 'next_action', 'action_due', 'remarks', 'est_value', 'currency', 'value_gbp', 'tier', 'vendor_id', 'supplier', 'po_ref', 'grn_ref', 'invoice_ref', 'nexc'];
+    const head = ['N', 'PR N.', 'FAMILY', 'ITEM', 'PRIORITY', 'VALIDATED', 'STAGE', 'OPEN DATE', 'CLOSURE DATE', '% COMPLETE', 'DAYS', 'AGING', 'RISK FLAG', 'RESPONSIBLE', 'NEXT ACTION', 'ACTION DUE', 'REMARKS', 'EST. VALUE', 'CURRENCY', 'VALUE GBP', 'TIER', 'VENDOR ID', 'SUPPLIER', 'PO REF', 'GRN REF', 'INVOICE REF', 'EXCEPTIONS'];
     const esc = (v) => { if (v == null) return ''; const s = String(v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
     const rows = state.rows.slice().sort((a, b) => a.n - b.n).map((r) => cols.map((c) => esc(c === 'pct' ? Math.round(r.pct * 1000) / 10 + '%' : c === 'risk' && r.risk === '-' ? '' : c === 'aging' && r.aging === '-' ? '' : r[c])).join(','));
-    const exc = ['', 'EXCEPTIONS', 'PR,CATEGORY,CHECK,EVIDENCE', ...state.exc.map((e) => [e.pr, e.category, e.check, e.evidence].map(esc).join(','))];
+    const exc = ['', 'EXCEPTIONS', 'PR / VENDOR,CATEGORY,CHECK,EVIDENCE', ...state.exc.map((e) => [e.pr, e.category, e.check, e.evidence].map(esc).join(','))];
     try { await saveFile('Sudan_PR_Register_' + todayStr() + '.csv', '\ufeff' + [head.join(','), ...rows, ...exc].join('\r\n'), 'text/csv'); toast('Export saved'); }
     catch (e) { if (e && e.code !== 'declined') toast('Export is not available here.', { err: true }); }
   };
@@ -954,7 +1443,7 @@ const CORE = (() => {
   setSync(C ? 'live' : '', state.canWrite ? 'Editing' : 'Published data');
   if (!C) setSync('live', 'Web version');
   if (restoredNote && !OFFLINE) { const b = $('#banner'); b.hidden = false; b.textContent = restoredNote; }
-  renderSource(); recompute(); syncFilterInputs(); showTab(state.tab); render();
+  renderSource(); recompute(); syncFilterInputs(); showTab(state.tab); render(); renderVendorRequirements();
   if (OFFLINE && state.canWrite) enterOfflineEdit();
 })();
 </script></body></html>
