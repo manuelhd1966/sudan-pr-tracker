@@ -232,12 +232,19 @@ body.has-savebar main.inner { padding-bottom: 110px; }
 .score-pill i s { display: block; height: 100%; text-decoration: none; }
 .st-Approved { color: var(--ok); } .st-Suspended { color: var(--bad); } .st-Inactive { color: var(--muted); } .st-New, .st-Under { color: var(--accent); }
 @media (max-width: 640px) { .docrow { grid-template-columns: 50px 1fr; } .docrow > :nth-child(n+3) { grid-column: 2; } .ddrow { grid-template-columns: 44px 1fr; } .ddrow .seg { grid-column: 2; justify-self: start; } }
+
+/* author credit (fixed in the page template) */
+.brand .credit { font-size: 11px; color: var(--muted); letter-spacing: .02em; margin-top: 1px; }
+.credit-foot { border-top: 1px solid var(--line); background: var(--panel); }
+.credit-foot .inner { padding-block: 10px; font-size: 11px; color: var(--muted); }
+body.has-savebar .credit-foot { padding-bottom: 64px; }
 </style>
 <template id="shell"><header class="bar gut">
   <div class="inner">
     <div class="brand">
       <span class="eb">UK-Med Sudan · Tawila / MERU · Procurement</span>
       <h1>Sudan PR Tracker</h1>
+      <span class="credit">Manuel Hernández Díez · Log Manager, Sudan</span>
     </div>
     <span class="sync" id="sync"><i></i><span>Connecting…</span></span>
     <span class="me" id="me"></span>
@@ -376,6 +383,8 @@ body.has-savebar main.inner { padding-bottom: 110px; }
     </div>
   </section>
 </main>
+
+<footer class="credit-foot gut"><div class="inner">Sudan PR Tracker · prepared by Manuel Hernández Díez, Log Manager, Sudan · UK-Med Tawila / MERU</div></footer>
 
 <div id="drawer-root"></div>
 <div id="toast-root"></div>
